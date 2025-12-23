@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <meta name=viewport content="width=device-width,initial-scale=1,maximum-scale=1,minimum-scale=1,user-scalable=no,minimal-ui,viewport-fit=cover">
+    <meta name=apple-mobile-web-app-capable content=yes>
+    <meta name=apple-mobile-web-app-status-bar-style content=black>
+    <title>Mhwlng's Star Citizen</title>
+    <link rel="stylesheet" href="../sdpi.css">
+    <link rel="stylesheet" href="../jquery.highlight-within-textarea.css">
+    <script src="../sdtools.common.js"></script>
+    <script src="../jquery-3.3.1.min.js"></script>
+    <script src="../jquery.highlight-within-textarea.js"></script>
+    <style>
+        .no-results {
+            padding: 10px;
+            color: #999;
+            font-style: italic;
+            text-align: center;
+        }
+        .hidden {
+            display: none !important;
+        }
+    </style>
+</head>
+<body>
+    <div class="sdpi-wrapper">
+
+        <div class="sdpi-item">
+            <div class="sdpi-item-label">Search</div>
+            <input type="text" class="sdpi-item-value" id="functionSearch" placeholder="Type to search functions..." autocomplete="off">
+        </div>
+
+        <div class="sdpi-item">
+            <div class="sdpi-item-label">Function</div>
+            <select class="sdpi-item-value select sdProperty function-select" id="function" oninput="handleFunctionSelection()" onchange="setSettings()">
+                <option value="" class="loading-indicator">Loading Star Citizen functions...</option>
+            </select>
+        </div>
+
+        <div class="sdpi-item" id="dvClickSound">
+            <div class="sdpi-item-label" onclick="clearFileName('clickSound');">Sound</div>
+            <div class="sdpi-item-group file" id="filepickergroup1">
+                <input class="sdpi-item-value sdProperty sdFile" type="file" id="clickSound" accept=".wav" oninput="setSettings()">
+                <label class="sdpi-file-info " for="clickSound" id="clickSoundFilename">No file...</label>
+                <label class="sdpi-file-label" for="clickSound">Choose file...</label>
+            </div>
+        </div>
+
+        <div class="sdpi-item no-results hidden" id="noResults">No functions match your search.</div>
+
+    </div>
+
+    <script>
+        // Store all options for search functionality
+        let allOptions = [];
+        let functionsLoaded = false;
+        let pendingSelectedValue = null;
+
+        // Function selection handler
+        function handleFunctionSelection() {
+            const functionSelect = document.getElementById('function');
+            const selectedValue = functionSelect.value;
+
+            if (selectedValue) {
+                console.log('Function selected:', selectedValue);
+            }
+        }
+
+        // Populate dropdown with functions data from the plugin
+        function populateDropdown(functionsData) {
+            console.log('Populating dropdown with', functionsData.length, 'groups');
+            
+            const functionSelect = document.getElementById('function');
+            const currentValue = functionSelect.value || pendingSelectedValue;
+            
+            // Clear existing options
+            functionSelect.innerHTML = '';
+            allOptions = [];
+            
+            // Add empty option
+            const emptyOption = document.createElement('option');
+            emptyOption.value = '';
+            emptyOption.textContent = '-- Select a function --';
+            functionSelect.appendChild(emptyOption);
+            
+            // Add option groups
+            functionsData.forEach(group => {
+                const optgroup = document.createElement('optgroup');
+                optgroup.label = group.label;
+                optgroup.setAttribute('data-category', group.label.toLowerCase().replace(/ /g, '-'));
+                
+                group.options.forEach(opt => {
+                    const option = document.createElement('option');
+                    option.value = opt.value;
+                    option.textContent = opt.text;
+                    option.setAttribute('data-binding-type', opt.bindingType || '');
+                    option.setAttribute('data-search', opt.searchText || opt.text.toLowerCase());
+                    
+                    optgroup.appendChild(option);
+                    
+                    // Store for search functionality
+                    allOptions.push({
+                        element: option,
+                        optgroup: optgroup,
+                        text: opt.text.toLowerCase(),
+                        searchText: opt.searchText || opt.text.toLowerCase(),
+                        value: opt.value
+                    });
+                });
+                
+                functionSelect.appendChild(optgroup);
+            });
+            
+            // Restore previously selected value if any
+            if (currentValue) {
+                functionSelect.value = currentValue;
+                console.log('Restored selected value:', currentValue);
+            }
+            
+            functionsLoaded = true;
+            console.log('Dropdown populated with', allOptions.length, 'total options');
+        }
+
+        // Filter options based on search
+        function filterOptions() {
+            if (!functionsLoaded) return;
+            
+            const searchInput = document.getElementById('functionSearch');
+            const functionSelect = document.getElementById('function');
+            const noResults = document.getElementById('noResults');
+            
+            const searchTerm = searchInput.value.toLowerCase().trim();
+            let visibleCount = 0;
+
+            allOptions.forEach(option => {
+                const isVisible = !searchTerm ||
+                    option.searchText.includes(searchTerm) ||
+                    option.text.includes(searchTerm);
+
+                if (isVisible) {
+                    option.element.style.display = '';
+                    option.optgroup.style.display = '';
+                    visibleCount++;
+                } else {
+                    option.element.style.display = 'none';
+                }
+            });
+
+            // Hide empty optgroups
+            functionSelect.querySelectorAll('optgroup').forEach(optgroup => {
+                const hasVisibleOptions = Array.from(optgroup.querySelectorAll('option')).some(option =>
+                    option.style.display !== 'none'
+                );
+                optgroup.style.display = hasVisibleOptions ? '' : 'none';
+            });
+
+            // Show/hide no results message
+            noResults.classList.toggle('hidden', visibleCount > 0);
+
+            console.log('Search filtered to', visibleCount, 'visible options');
+        }
+
+        // Override websocketOnMessage to handle custom functions data
+        const originalWebsocketOnMessage = typeof websocketOnMessage !== 'undefined' ? websocketOnMessage : null;
+        
+        function customWebsocketOnMessage(evt) {
+            var jsonObj = JSON.parse(evt.data);
+            console.log('Received message:', jsonObj.event);
+
+            if (jsonObj.event === 'sendToPropertyInspector') {
+                var payload = jsonObj.payload;
+                
+                // Handle functions data
+                if (payload.functionsLoaded && payload.functions) {
+                    console.log('Received functions data from plugin');
+                    populateDropdown(payload.functions);
+                }
+                
+                // Also call loadConfiguration for settings (like selected function value)
+                loadConfiguration(payload);
+            }
+            else if (jsonObj.event === 'didReceiveSettings') {
+                var payload = jsonObj.payload;
+                
+                // Store the selected value if functions aren't loaded yet
+                if (!functionsLoaded && payload.settings && payload.settings.function) {
+                    pendingSelectedValue = payload.settings.function;
+                    console.log('Stored pending selected value:', pendingSelectedValue);
+                }
+                
+                loadConfiguration(payload.settings);
+            }
+            else {
+                console.log("Unhandled websocketOnMessage: " + jsonObj.event);
+            }
+        }
+
+        // Hook into websocket creation to override message handler
+        document.addEventListener('websocketCreate', function() {
+            console.log('Websocket created, setting up custom message handler');
+            if (websocket) {
+                websocket.onmessage = customWebsocketOnMessage;
+            }
+        });
+
+        // Also try to set up immediately in case websocket already exists
+        function setupMessageHandler() {
+            if (typeof websocket !== 'undefined' && websocket) {
+                console.log('Setting up custom message handler (immediate)');
+                websocket.onmessage = customWebsocketOnMessage;
+                return true;
+            }
+            return false;
+        }
+
+        // Try to set up handler with a small delay as fallback
+        setTimeout(function() {
+            if (!setupMessageHandler()) {
+                // Try again after a bit more time
+                setTimeout(setupMessageHandler, 500);
+            }
+        }, 100);
+
+        // Search functionality initialization
+        document.addEventListener('DOMContentLoaded', function() {
+            const searchInput = document.getElementById('functionSearch');
+
+            // Event listeners
+            searchInput.addEventListener('input', function() {
+                // Debounce search for better performance
+                clearTimeout(searchInput.searchTimeout);
+                searchInput.searchTimeout = setTimeout(filterOptions, 150);
+            });
+
+            console.log('Static.html initialized, waiting for functions data...');
+        });
+    </script>
+</body>
+</html>
