@@ -29,6 +29,7 @@
         <div class="sdpi-item">
             <div class="sdpi-item-label">Search</div>
             <input type="text" class="sdpi-item-value" id="functionSearch" placeholder="Type to search functions..." autocomplete="off">
+            <div class="sdpi-item-value" id="searchResults" style="font-size: 11px; color: #999; margin-top: 4px;"></div>
         </div>
 
         <div class="sdpi-item">
@@ -147,6 +148,7 @@
             const searchInput = document.getElementById('functionSearch');
             const functionSelect = document.getElementById('function');
             const noResults = document.getElementById('noResults');
+            const searchResults = document.getElementById('searchResults');
             
             const searchTerm = searchInput.value.toLowerCase().trim();
             let visibleCount = 0;
@@ -175,6 +177,17 @@
 
             // Show/hide no results message
             noResults.classList.toggle('hidden', visibleCount > 0);
+            
+            // Update result counter
+            if (searchTerm) {
+                searchResults.textContent = `Found ${visibleCount} function${visibleCount !== 1 ? 's' : ''}`;
+                // Auto-open the dropdown when searching
+                functionSelect.focus();
+                functionSelect.size = 10; // Show multiple options at once
+            } else {
+                searchResults.textContent = '';
+                functionSelect.size = 1; // Back to normal dropdown
+            }
 
             console.log('Search filtered to', visibleCount, 'visible options');
         }
@@ -203,12 +216,32 @@
         // Search functionality initialization
         document.addEventListener('DOMContentLoaded', function() {
             const searchInput = document.getElementById('functionSearch');
+            const functionSelect = document.getElementById('function');
+            const searchResults = document.getElementById('searchResults');
 
             // Event listeners
             searchInput.addEventListener('input', function() {
                 // Debounce search for better performance
                 clearTimeout(searchInput.searchTimeout);
                 searchInput.searchTimeout = setTimeout(filterOptions, 150);
+            });
+
+            // Clear search after selection
+            functionSelect.addEventListener('change', function() {
+                if (functionSelect.value) {
+                    // User selected a function, clear the search
+                    searchInput.value = '';
+                    searchResults.textContent = '';
+                    functionSelect.size = 1; // Back to normal dropdown
+                    
+                    // Reset all options to visible
+                    allOptions.forEach(option => {
+                        option.element.style.display = '';
+                        option.optgroup.style.display = '';
+                    });
+                    
+                    console.log('Search cleared after selection');
+                }
             });
 
             console.log('Static.html initialized, waiting for functions data...');
