@@ -179,6 +179,7 @@
     <Compile Include="Audio\CachedSoundSampleProvider.cs" />
     <Compile Include="Buttons\StarCitizenDialBase.cs" />
     <Compile Include="Buttons\Dial.cs" />
+    <Compile Include="Buttons\Momentary.cs" />
     <Compile Include="Buttons\StreamDeckCommon.cs" />
     <Compile Include="Buttons\StarCitizenKeypadBase.cs" />
     <Compile Include="Buttons\Macro.cs" />
@@ -301,6 +302,9 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <Content Include="PropertyInspector\StarCitizen\Dial.html">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="PropertyInspector\StarCitizen\Momentary.html">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <Content Include="PropertyInspector\StarCitizen\Static.html">

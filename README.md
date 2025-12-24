@@ -9,6 +9,46 @@
 
 ## What's New in This Fork
 
+		## Momentary Button
+
+		The Momentary Button is designed for immersive, one-shot actions in Star Citizen where visual feedback matters, but no persistent state is required.
+
+		Unlike a toggle button, the Momentary Button does not maintain an on/off state.
+
+		### How it works
+
+		- The user selects a Star Citizen function (same system as the Static Button).
+		- Two images are configured directly in the Stream Deck UI:
+		  - **Idle Image** – default appearance.
+		  - **Active Image** – shown temporarily when the button is pressed.
+		- When pressed:
+		  - The configured Star Citizen keybind is sent once.
+		  - The button image immediately switches to the Active Image.
+		- After a user-defined delay (in milliseconds):
+		  - The button automatically reverts to the Idle Image.
+		  - No second press is required.
+
+		### Key characteristics
+
+		- One-shot action (non-toggle)
+		- Temporary visual feedback only
+		- Fully configurable delay
+		- Uses the same function selector and search system as the Static Button
+		- Supports drag-and-drop images via the Stream Deck UI
+
+		### Example use cases
+
+		- Engine start
+		- Landing gear activation
+		- Powering ship systems
+		- System priming or initialization
+		- Any action where a brief visual cue improves immersion
+
+
+
+
+## What's New in This Fork
+
 - **Automatic RSI Launcher Detection** - (Hopefully) No more manual path configuration! The plugin reads your RSI Launcher settings automatically.
 
 - **Search Functionality** - Quickly find keybindings with the new search box in the Property Inspector.

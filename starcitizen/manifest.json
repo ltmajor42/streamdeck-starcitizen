@@ -47,6 +47,26 @@
       "Tooltip": "Star Citizen Dial Button",
       "UUID": "com.mhwlng.starcitizen.dial",
       "PropertyInspectorPath": "PropertyInspector/StarCitizen/Dial.html"
+    },
+    {
+      "Icon": "Images/icon",
+      "Name": "Momentary Button",
+      "States": [
+        {
+          "Image": "Images/Default",
+          "TitleAlignment": "bottom",
+          "FontSize": "8"
+        },
+        {
+          "Image": "Images/Default",
+          "TitleAlignment": "bottom",
+          "FontSize": "8"
+        }
+      ],
+      "SupportedInMultiActions": true,
+      "Tooltip": "Star Citizen Momentary Button",
+      "UUID": "com.mhwlng.starcitizen.momentary",
+      "PropertyInspectorPath": "PropertyInspector/StarCitizen/Momentary.html"
     }
   ],
   "Author": "mhwlng",
@@ -68,9 +88,5 @@
   "Software": {
     "MinimumVersion": "6.1"
   },
-  "Profiles": [
-
-
-
-  ]  
+  "Profiles": []
 }

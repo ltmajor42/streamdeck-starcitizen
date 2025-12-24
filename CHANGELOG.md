@@ -5,6 +5,23 @@
 
 ## Changelog
 
+## v1.1.4
+
+### New Features
+- **Momentary Button (New Action)**:
+  - One-shot Star Citizen keybind execution (non-toggle)
+  - Temporary visual state with automatic revert
+  - User-configurable delay (milliseconds)
+  - Supports two images via Stream Deck UI (idle / active)
+  - Function selector with full search support
+
+### Technical Changes
+- Added `Momentary.cs` action based on Static button architecture
+- Added `Momentary.html` Property Inspector
+- Reused dynamic function loading and WebSocket communication system
+- Improved Property Inspector persistence handling for numeric inputs
+
+
 ## v1.1.3a
 
 ### Bug Fixes
