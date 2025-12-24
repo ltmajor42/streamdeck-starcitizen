@@ -181,12 +181,8 @@
             // Update result counter
             if (searchTerm) {
                 searchResults.textContent = `Found ${visibleCount} function${visibleCount !== 1 ? 's' : ''}`;
-                // Auto-open the dropdown when searching
-                functionSelect.focus();
-                functionSelect.size = 10; // Show multiple options at once
             } else {
                 searchResults.textContent = '';
-                functionSelect.size = 1; // Back to normal dropdown
             }
 
             console.log('Search filtered to', visibleCount, 'visible options');

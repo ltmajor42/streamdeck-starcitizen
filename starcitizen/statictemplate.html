@@ -29,6 +29,7 @@
         <div class="sdpi-item">
             <div class="sdpi-item-label">Search</div>
             <input type="text" class="sdpi-item-value" id="functionSearch" placeholder="Type to search functions..." autocomplete="off">
+            <div class="sdpi-item-value" id="searchResults" style="font-size: 11px; color: #999; margin-top: 4px;"></div>
         </div>
 
         <div class="sdpi-item">
@@ -57,47 +58,33 @@
         let functionsLoaded = false;
         let savedFunctionValue = null;
 
-        // Helper to send logs to backend pluginlog.log
-        function logToBackend(message, data) {
-            const logMessage = data ? `${message} ${JSON.stringify(data)}` : message;
-            console.log(logMessage); // Also log to console
-            
-            // Send to backend plugin log
-            if (typeof sendValueToPlugin === 'function') {
-                sendValueToPlugin(logMessage, 'jslog');
-            }
-        }
-
         // Override loadConfiguration to handle function field specially
         const originalLoadConfiguration = loadConfiguration;
         loadConfiguration = function(payload) {
-            logToBackend('*** loadConfiguration called ***', payload);
+            console.log('Custom loadConfiguration called');
             
-            // Only update savedFunctionValue if we have a non-empty function value
-            // (don't let empty values overwrite previously saved values)
-            if (payload && 'function' in payload && payload.function) {
-                logToBackend('Updating savedFunctionValue from: ' + savedFunctionValue + ' to: ' + payload.function);
+            // Save the function value if present
+            if (payload && payload.function) {
                 savedFunctionValue = payload.function;
-            } else {
-                logToBackend('Keeping existing savedFunctionValue: ' + savedFunctionValue);
-            }
-            
-            // If dropdown is already loaded and we have a value, set it now
-            if (functionsLoaded && savedFunctionValue) {
-                logToBackend('Dropdown already loaded, restoring value immediately');
-                const functionSelect = document.getElementById('function');
-                if (functionSelect) {
-                    setTimeout(function() {
+                console.log('Saved function value for later restoration:', savedFunctionValue);
+                
+                // If dropdown is already loaded, set it now
+                if (functionsLoaded) {
+                    const functionSelect = document.getElementById('function');
+                    if (functionSelect) {
                         functionSelect.value = savedFunctionValue;
-                        logToBackend('Set dropdown to: ' + savedFunctionValue + ', actual value: ' + functionSelect.value);
-                    }, 100);
+                        console.log('Immediately set function value:', savedFunctionValue);
+                    }
                 }
+                
+                // Remove function from payload so original loadConfiguration doesn't try to set it
+                const payloadCopy = Object.assign({}, payload);
+                delete payloadCopy.function;
+                originalLoadConfiguration(payloadCopy);
+            } else {
+                // No function in payload, call original as-is
+                originalLoadConfiguration(payload);
             }
-            
-            // Remove function from payload so original loadConfiguration doesn't try to set it
-            const payloadCopy = Object.assign({}, payload);
-            delete payloadCopy.function;
-            originalLoadConfiguration(payloadCopy);
         };
 
         // Populate dropdown with functions data from the plugin
@@ -147,20 +134,10 @@
             functionsLoaded = true;
             console.log('Dropdown populated with', allOptions.length, 'total options');
             
-            // Restore saved value if any - use setTimeout to ensure browser finishes rendering
+            // Restore saved value if any
             if (savedFunctionValue) {
-                setTimeout(function() {
-                    functionSelect.value = savedFunctionValue;
-                    console.log('Restored saved function value after population:', savedFunctionValue);
-                    
-                    // Verify it was actually set
-                    if (functionSelect.value === savedFunctionValue) {
-                        console.log('✓ Function value successfully restored!');
-                    } else {
-                        console.warn('✗ Failed to restore function value - trying again');
-                        functionSelect.value = savedFunctionValue;
-                    }
-                }, 50);
+                functionSelect.value = savedFunctionValue;
+                console.log('Restored saved function value after population:', savedFunctionValue);
             }
         }
 
@@ -171,6 +148,7 @@
             const searchInput = document.getElementById('functionSearch');
             const functionSelect = document.getElementById('function');
             const noResults = document.getElementById('noResults');
+            const searchResults = document.getElementById('searchResults');
             
             const searchTerm = searchInput.value.toLowerCase().trim();
             let visibleCount = 0;
@@ -199,6 +177,13 @@
 
             // Show/hide no results message
             noResults.classList.toggle('hidden', visibleCount > 0);
+            
+            // Update result counter
+            if (searchTerm) {
+                searchResults.textContent = `Found ${visibleCount} function${visibleCount !== 1 ? 's' : ''}`;
+            } else {
+                searchResults.textContent = '';
+            }
 
             console.log('Search filtered to', visibleCount, 'visible options');
         }
@@ -227,12 +212,32 @@
         // Search functionality initialization
         document.addEventListener('DOMContentLoaded', function() {
             const searchInput = document.getElementById('functionSearch');
+            const functionSelect = document.getElementById('function');
+            const searchResults = document.getElementById('searchResults');
 
             // Event listeners
             searchInput.addEventListener('input', function() {
                 // Debounce search for better performance
                 clearTimeout(searchInput.searchTimeout);
                 searchInput.searchTimeout = setTimeout(filterOptions, 150);
+            });
+
+            // Clear search after selection
+            functionSelect.addEventListener('change', function() {
+                if (functionSelect.value) {
+                    // User selected a function, clear the search
+                    searchInput.value = '';
+                    searchResults.textContent = '';
+                    functionSelect.size = 1; // Back to normal dropdown
+                    
+                    // Reset all options to visible
+                    allOptions.forEach(option => {
+                        option.element.style.display = '';
+                        option.optgroup.style.display = '';
+                    });
+                    
+                    console.log('Search cleared after selection');
+                }
             });
 
             console.log('Static.html initialized, waiting for functions data...');
