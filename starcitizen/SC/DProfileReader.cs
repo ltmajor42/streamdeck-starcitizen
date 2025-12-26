@@ -1,19 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics.Eventing.Reader;
-using System.Globalization;
 using System.IO;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Xml;
 using System.Xml.Linq;
 using BarRaider.SdTools;
-using p4ktest;
-using p4ktest.SC;
 using starcitizen;
-using WindowsInput;
-using Action = System.Action;
 
 namespace SCJMapper_V2.SC
 {
@@ -408,28 +400,6 @@ namespace SCJMapper_V2.SC
                             ReadActivationMode(activationMode);
                         }
                     }
-
-                    /*
-                    //Modifiers.Instance.Clear();
-                    IEnumerable<XElement> modifiers = from x in el.Elements()
-                                                      where (x.Name == "modifiers")
-                                                      select x;
-                    foreach (XElement modifier in modifiers)
-                    {
-                        //ValidContent &= Modifiers.Instance.FromXML(modifier, true);
-                    }
-
-                    // only in defaultProfile.xml
-                    //OptionTree.InitOptionReader( );
-                    
-                    IEnumerable<XElement> optiontrees = from x in el.Elements( )
-                                                      where ( x.Name == "optiontree" )
-                                                      select x;
-
-                    foreach ( XElement optiontree in optiontrees ) {
-                     // ValidContent &= OptionTree.fromProfileXML( optiontree );
-                    }
-                    */
 
                     IEnumerable<XElement> options = el.Elements().Where(x => x.Name == "options");
 
