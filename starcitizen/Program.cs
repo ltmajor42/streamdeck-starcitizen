@@ -84,10 +84,6 @@ namespace starcitizen
 
         public static string profile;
 
-        public static string dialtemplate;
-
-        public static string macrotemplate;
-
         // Event to notify buttons when key bindings are loaded
         public static event EventHandler KeyBindingsLoaded;
 
@@ -126,10 +122,6 @@ namespace starcitizen
 
                 dpReader.Actions();
 
-                dpReader.CreateDialHtml(dialtemplate);
-
-                dpReader.CreateMacroHtml(macrotemplate);
-
                 dpReader.CreateCsv();
 
                 string profilePath = SCPath.SCClientProfilePath;
@@ -163,10 +155,6 @@ namespace starcitizen
             try
             {
                 SCFiles.Instance.UpdatePack(); // update game files
-
-                dialtemplate = File.ReadAllText("dialtemplate.html");
-
-                macrotemplate = File.ReadAllText("macrotemplate.html");
 
                 profile = SCDefaultProfile.DefaultProfile();
 

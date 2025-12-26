@@ -1,9 +1,12 @@
 ﻿using System;
+using System.Globalization;
 using System.IO;
+using System.Linq;
 using System.Threading.Tasks;
 using System.Windows.Input;
 using WindowsInput.Native;
 using BarRaider.SdTools;
+using BarRaider.SdTools.Events;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
@@ -64,6 +67,11 @@ namespace starcitizen.Buttons
                 HandleFileNames();
             }
 
+            Connection.OnPropertyInspectorDidAppear += Connection_OnPropertyInspectorDidAppear;
+            Connection.OnSendToPlugin += Connection_OnSendToPlugin;
+            Program.KeyBindingsLoaded += OnKeyBindingsLoaded;
+
+            UpdatePropertyInspector();
         }
 
 
@@ -108,6 +116,9 @@ namespace starcitizen.Buttons
 
         public override void Dispose()
         {
+            Connection.OnPropertyInspectorDidAppear -= Connection_OnPropertyInspectorDidAppear;
+            Connection.OnSendToPlugin -= Connection_OnSendToPlugin;
+            Program.KeyBindingsLoaded -= OnKeyBindingsLoaded;
             base.Dispose();
 
             //Logger.Instance.LogMessage(TracingLevel.DEBUG, "Destructor called #1");
@@ -154,6 +165,116 @@ namespace starcitizen.Buttons
             }
 
             Connection.SetSettingsAsync(JObject.FromObject(settings)).Wait();
+        }
+
+        private void Connection_OnPropertyInspectorDidAppear(object sender, SDEventReceivedEventArgs<PropertyInspectorDidAppear> e)
+        {
+            UpdatePropertyInspector();
+        }
+
+        private void Connection_OnSendToPlugin(object sender, SDEventReceivedEventArgs<SendToPlugin> e)
+        {
+            if (e?.Event?.Payload?["property_inspector"]?.ToString() == "propertyInspectorConnected")
+            {
+                UpdatePropertyInspector();
+            }
+        }
+
+        private void OnKeyBindingsLoaded(object sender, EventArgs e)
+        {
+            UpdatePropertyInspector();
+        }
+
+        private void UpdatePropertyInspector()
+        {
+            if (Program.dpReader == null)
+            {
+                return;
+            }
+
+            Connection.SendToPropertyInspectorAsync(new JObject
+            {
+                ["functionsLoaded"] = true,
+                ["functions"] = BuildFunctionsData()
+            });
+        }
+
+        private JArray BuildFunctionsData()
+        {
+            var result = new JArray();
+
+            try
+            {
+                var keyboard = KeyboardLayouts.GetThreadKeyboardLayout();
+                CultureInfo culture;
+
+                try { culture = new CultureInfo(keyboard.KeyboardId); }
+                catch { culture = new CultureInfo("en-US"); }
+
+                var actions = Program.dpReader.GetAllActions().Values
+                    .Where(x =>
+                        !string.IsNullOrWhiteSpace(x.Keyboard) ||
+                        !string.IsNullOrWhiteSpace(x.Mouse) ||
+                        !string.IsNullOrWhiteSpace(x.Joystick) ||
+                        !string.IsNullOrWhiteSpace(x.Gamepad))
+                    .OrderBy(x => x.MapUILabel)
+                    .GroupBy(x => x.MapUILabel);
+
+                foreach (var group in actions)
+                {
+                    var groupObj = new JObject
+                    {
+                        ["label"] = group.Key,
+                        ["options"] = new JArray()
+                    };
+
+                    foreach (var action in group.OrderBy(x => x.MapUICategory).ThenBy(x => x.UILabel))
+                    {
+                        string primaryBinding = "";
+
+                        if (!string.IsNullOrWhiteSpace(action.Keyboard))
+                        {
+                            var keyString = CommandTools.ConvertKeyStringToLocale(action.Keyboard, culture.Name);
+                            primaryBinding = keyString
+                                .Replace("Dik", "")
+                                .Replace("}{", "+")
+                                .Replace("{", "")
+                                .Replace("}", "");
+                        }
+                        else if (!string.IsNullOrWhiteSpace(action.Mouse))
+                        {
+                            primaryBinding = action.Mouse;
+                        }
+                        else if (!string.IsNullOrWhiteSpace(action.Joystick))
+                        {
+                            primaryBinding = action.Joystick;
+                        }
+                        else if (!string.IsNullOrWhiteSpace(action.Gamepad))
+                        {
+                            primaryBinding = action.Gamepad;
+                        }
+
+                        ((JArray)groupObj["options"]).Add(new JObject
+                        {
+                            ["value"] = action.Name,
+                            ["text"] = $"{action.UILabel}{(string.IsNullOrWhiteSpace(primaryBinding) ? "" : $" [{primaryBinding}]")}",
+                            ["searchText"] =
+                                $"{action.UILabel.ToLower()} " +
+                                $"{action.UIDescription?.ToLower() ?? ""} " +
+                                $"{primaryBinding.ToLower()}"
+                        });
+                    }
+
+                    if (((JArray)groupObj["options"]).Count > 0)
+                        result.Add(groupObj);
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.Instance.LogMessage(TracingLevel.ERROR, ex.ToString());
+            }
+
+            return result;
         }
     }
 }
