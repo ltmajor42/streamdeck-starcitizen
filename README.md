@@ -9,6 +9,20 @@
 
 		## What's New in This Fork
 
+		## Cosmetic Key (Visual Only)
+			The **Cosmetic Key** action is a visual-only tile for your Stream Deck.
+
+		### What it does
+			- Appears in the Stream Deck action list under the **Star Citizen** category.
+			- **Does not send any keys or actions** when pressed.
+			- Useful for:
+			  - Labels
+			  - Images / icons / separators
+			  - Visual layout / organization on profiles
+
+		### Notes
+			- This is intentionally cosmetic and does not interact with Star Citizen.
+
 		## State Memory (Soft Sync Toggle)
 			The **State Memory** button is designed for toggleable systems in Star Citizen that have no reliable API feedback.
 

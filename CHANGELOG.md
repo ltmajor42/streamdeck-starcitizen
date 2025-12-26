@@ -5,6 +5,15 @@
 
 ## Changelog
 
+## v1.1.6
+
+### New
+- **Cosmetic Key** action (visual-only tile):
+  - Adds a new Stream Deck action under the Star Citizen category.
+  - Does not send any keybinds or events (purely cosmetic).
+  - Uses a custom action icon in the Stream Deck actions list.
+
+
 ## v1.1.5
 
 ### New Features

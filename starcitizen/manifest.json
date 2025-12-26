@@ -1,11 +1,11 @@
 {
   "Actions": [
     {
-      "Icon": "Images/icon",
+      "Icon": "Images/Static",
       "Name": "Static Button",
       "States": [
         {
-          "Image": "Images/Default",
+          "Image": "Images/Static",
           "TitleAlignment": "bottom",
           "FontSize": "8"
         }
@@ -16,7 +16,7 @@
       "PropertyInspectorPath": "PropertyInspector/StarCitizen/Static.html"
     },
     {
-      "Icon": "Images/icon",
+      "Icon": "Images/Default",
       "Name": "Multi-Action Button",
       "States": [
         {
@@ -49,16 +49,16 @@
       "PropertyInspectorPath": "PropertyInspector/StarCitizen/Dial.html"
     },
     {
-      "Icon": "Images/icon",
+      "Icon": "Images/Momentary0",
       "Name": "Momentary Button",
       "States": [
         {
-          "Image": "Images/Default",
+          "Image": "Images/Momentary0",
           "TitleAlignment": "bottom",
           "FontSize": "8"
         },
         {
-          "Image": "Images/Default",
+          "Image": "Images/Momentary1",
           "TitleAlignment": "bottom",
           "FontSize": "8"
         }
@@ -68,18 +68,31 @@
       "UUID": "com.mhwlng.starcitizen.momentary",
       "PropertyInspectorPath": "PropertyInspector/StarCitizen/Momentary.html"
     },
-
     {
-      "Icon": "Images/icon",
+      "Icon": "Images/Cosmetic",
+      "Name": "Cosmetic Key",
+      "States": [
+        {
+          "Image": "Images/Cosmetic",
+          "TitleAlignment": "middle",
+          "FontSize": "16"
+        }
+      ],
+      "SupportedInMultiActions": false,
+      "Tooltip": "A key that does nothing. Use it for images/GIFs/text only.",
+      "UUID": "com.mhwlng.starcitizen.cosmetickey"
+    },
+    {
+      "Icon": "Images/Statememory0",
       "Name": "State Memory (Soft Sync Toggle)",
       "States": [
         {
-          "Image": "Images/Default",
+          "Image": "Images/Statememory0",
           "TitleAlignment": "bottom",
           "FontSize": "8"
         },
         {
-          "Image": "Images/Default",
+          "Image": "Images/Statememory1",
           "TitleAlignment": "bottom",
           "FontSize": "8"
         }
