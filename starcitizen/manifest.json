@@ -1,34 +1,19 @@
 {
   "Actions": [
     {
-      "Icon": "Images/Static",
-      "Name": "Static Button",
+      "Icon": "Images/ActionKey",
+      "Name": "Action Key",
       "States": [
         {
-          "Image": "Images/Static",
+          "Image": "Images/ActionKey",
           "TitleAlignment": "bottom",
           "FontSize": "8"
         }
       ],
       "SupportedInMultiActions": true,
-      "Tooltip": "Star Citizen Static Button",
+      "Tooltip": "Star Citizen Action Key",
       "UUID": "com.mhwlng.starcitizen.static",
       "PropertyInspectorPath": "PropertyInspector/StarCitizen/Static.html"
-    },
-    {
-      "Icon": "Images/Default",
-      "Name": "Multi-Action Button",
-      "States": [
-        {
-          "Image": "Images/Default",
-          "TitleAlignment": "bottom",
-          "FontSize": "8"
-        }
-      ],
-      "SupportedInMultiActions": true,
-      "Tooltip": "Star Citizen Multi-Action Button",
-      "UUID": "com.mhwlng.starcitizen.macro",
-      "PropertyInspectorPath": "PropertyInspector/StarCitizen/Macro.html"
     },
     {
       "Icon": "Images/pluginIcon",
@@ -69,36 +54,36 @@
       "PropertyInspectorPath": "PropertyInspector/StarCitizen/Momentary.html"
     },
     {
-      "Icon": "Images/Momentary0",
-      "Name": "Dual Action Button",
+      "Icon": "Images/Dualaction0",
+      "Name": "Repeataction",
       "States": [
         {
-          "Image": "Images/Momentary0",
+          "Image": "Images/Dualaction0",
           "TitleAlignment": "bottom",
           "FontSize": "8"
         },
         {
-          "Image": "Images/Momentary1",
+          "Image": "Images/Dualaction1",
           "TitleAlignment": "bottom",
           "FontSize": "8"
         }
       ],
       "SupportedInMultiActions": true,
-      "Tooltip": "Star Citizen Dual Action Button",
+      "Tooltip": "Star Citizen Repeataction Button",
       "UUID": "com.mhwlng.starcitizen.dualaction",
       "PropertyInspectorPath": "PropertyInspector/StarCitizen/DualAction.html"
     },
     {
-      "Icon": "Images/Momentary0",
-      "Name": "Increase / Decrease (Hold)",
+      "Icon": "Images/Repeataction0",
+      "Name": "Repeataction",
       "States": [
         {
-          "Image": "Images/Momentary0",
+          "Image": "Images/Repeataction0",
           "TitleAlignment": "bottom",
           "FontSize": "8"
         },
         {
-          "Image": "Images/Momentary1",
+          "Image": "Images/Repeataction1",
           "TitleAlignment": "bottom",
           "FontSize": "8"
         }
@@ -109,16 +94,16 @@
       "PropertyInspectorPath": "PropertyInspector/StarCitizen/IncreaseDecreaseHold.html"
     },
     {
-      "Icon": "Images/Momentary0",
+      "Icon": "Images/ActionDelay0",
       "Name": "Action Delay",
       "States": [
         {
-          "Image": "Images/Momentary0",
+          "Image": "Images/ActionDelay0",
           "TitleAlignment": "bottom",
           "FontSize": "8"
         },
         {
-          "Image": "Images/Momentary1",
+          "Image": "Images/ActionDelay1",
           "TitleAlignment": "bottom",
           "FontSize": "8"
         }

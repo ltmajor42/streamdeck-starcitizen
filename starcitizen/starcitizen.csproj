@@ -189,7 +189,6 @@
     <Compile Include="Buttons\StreamDeckCommon.cs" />
     <Compile Include="Buttons\StreamDeckEventArgsExtensions.cs" />
     <Compile Include="Buttons\StarCitizenKeypadBase.cs" />
-    <Compile Include="Buttons\Macro.cs" />
     <Compile Include="Buttons\Static.cs" />
     <Compile Include="CommandTools.cs" />
     <Compile Include="CryXMLlib\Conversions.cs" />
@@ -263,6 +262,13 @@
     </Content>
     <Content Include="Images\Momentary0.png" />
     <Content Include="Images\Momentary1.png" />
+    <Content Include="Images\ActionDelay0.png" />
+    <Content Include="Images\ActionDelay1.png" />
+    <Content Include="Images\ActionKey.png" />
+    <Content Include="Images\Dualaction0.png" />
+    <Content Include="Images\Dualaction1.png" />
+    <Content Include="Images\Repeataction0.png" />
+    <Content Include="Images\Repeataction1.png" />
     <Content Include="Images\pluginDialIcon.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
@@ -309,9 +315,6 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <Content Include="PropertyInspector\StarCitizen\Actiondelay.html">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="PropertyInspector\StarCitizen\Macro.html">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <Content Include="PropertyInspector\StarCitizen\Dial.html">
