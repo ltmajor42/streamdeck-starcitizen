@@ -38,6 +38,7 @@ The plugin logs useful startup and detection details in:
 ## Buttons (Actions) — What they do
 
 ### ActionKey
+<img width="100" height="100" alt="ActionKey" src="https://github.com/user-attachments/assets/fafae77c-add4-4a1c-bb84-808b9ef9f7ef" />
 
 Sends the selected Star Citizen function (keyboard bind).
 
@@ -49,6 +50,8 @@ Sends the selected Star Citizen function (keyboard bind).
 ---
 
 ### State Memory (Soft Sync Toggle)
+<img width="100" height="100" alt="Statememory1" src="https://github.com/user-attachments/assets/13b05164-f0cb-4273-bab5-ed49c1e4f3b7" />
+<img width="100" height="100" alt="Statememory0" src="https://github.com/user-attachments/assets/82f290bc-6eac-4cf1-a1df-3c9022b01f12" />
 
 A dedicated toggle-style action designed for Star Citizen systems with **no reliable state feedback**.
 
