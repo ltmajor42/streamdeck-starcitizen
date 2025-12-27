@@ -81,6 +81,16 @@ namespace SCJMapper_V2.SC
             @"E:\SteamLibrary\steamapps\common\Star Citizen",
         };
 
+        private static readonly object PathCacheLock = new();
+        private static string cachedBasePath;
+        private static bool cachedBasePathSet;
+
+        private static readonly object ClientPathCacheLock = new();
+        private static string cachedClientPath;
+        private static bool cachedClientPathSet;
+        private static bool cachedClientPathUsePtu;
+        private static string cachedClientBasePath;
+
         /// <summary>
         /// Try to find SC installation from RSI Launcher configuration files
         /// The RSI Launcher stores its library folder in %APPDATA%\rsilauncher\
@@ -503,79 +513,94 @@ namespace SCJMapper_V2.SC
         {
             get
             {
-                Logger.Instance.LogMessage(TracingLevel.DEBUG, "SCBasePath - Entry");
-
-                string scp = "";
-
-                // Method 1: Check appsettings config first (user override)
-                if (File.Exists("appSettings.config"))
+                lock (PathCacheLock)
                 {
-                    try
+                    if (cachedBasePathSet)
                     {
-                        var config = ConfigurationManager.OpenExeConfiguration(ConfigurationUserLevel.None);
-                        if (config.AppSettings.Settings["SCBasePath"] != null)
+                        return cachedBasePath;
+                    }
+
+                    cachedBasePath = ResolveBasePath();
+                    cachedBasePathSet = true;
+                    return cachedBasePath;
+                }
+            }
+        }
+
+        private static string ResolveBasePath()
+        {
+            Logger.Instance.LogMessage(TracingLevel.DEBUG, "SCBasePath - Entry");
+
+            string scp = "";
+
+            // Method 1: Check appsettings config first (user override)
+            if (File.Exists("appSettings.config"))
+            {
+                try
+                {
+                    var config = ConfigurationManager.OpenExeConfiguration(ConfigurationUserLevel.None);
+                    if (config.AppSettings.Settings["SCBasePath"] != null)
+                    {
+                        scp = config.AppSettings.Settings["SCBasePath"].Value;
+                        if (!string.IsNullOrEmpty(scp) && Directory.Exists(scp) && IsValidStarCitizenInstallation(scp))
                         {
-                            scp = config.AppSettings.Settings["SCBasePath"].Value;
-                            if (!string.IsNullOrEmpty(scp) && Directory.Exists(scp) && IsValidStarCitizenInstallation(scp))
-                            {
-                                Logger.Instance.LogMessage(TracingLevel.INFO, $"SCBasePath - Using user-specified path: {scp}");
-                                return scp;
-                            }
+                            Logger.Instance.LogMessage(TracingLevel.INFO, $"SCBasePath - Using user-specified path: {scp}");
+                            return scp;
                         }
                     }
-                    catch (Exception ex)
-                    {
-                        Logger.Instance.LogMessage(TracingLevel.DEBUG, $"SCBasePath - Error reading config: {ex.Message}");
-                    }
                 }
-
-                // Method 2: RSI Launcher configuration files (%APPDATA%\rsilauncher\)
-                scp = FindInstallationFromRSILauncher();
-                if (!string.IsNullOrEmpty(scp))
+                catch (Exception ex)
                 {
-                    Logger.Instance.LogMessage(TracingLevel.INFO, $"SCBasePath - Found via RSI Launcher config: {scp}");
-                    return scp;
+                    Logger.Instance.LogMessage(TracingLevel.DEBUG, $"SCBasePath - Error reading config: {ex.Message}");
                 }
-
-                // Method 3: Registry-based detection
-                scp = FindLauncherFromRegistry();
-                if (!string.IsNullOrEmpty(scp))
-                {
-                    scp = Path.GetDirectoryName(scp); // Get parent directory
-                    if (IsValidStarCitizenInstallation(scp))
-                    {
-                        Logger.Instance.LogMessage(TracingLevel.INFO, $"SCBasePath - Found via registry: {scp}");
-                        return scp;
-                    }
-                }
-
-                // Method 4: Common path scanning
-                scp = FindInstallationFromCommonPaths();
-                if (!string.IsNullOrEmpty(scp))
-                {
-                    Logger.Instance.LogMessage(TracingLevel.INFO, $"SCBasePath - Found via common paths: {scp}");
-                    return scp;
-                }
-
-                // Method 4: Steam library scanning
-                scp = FindInstallationFromSteamPaths();
-                if (!string.IsNullOrEmpty(scp))
-                {
-                    Logger.Instance.LogMessage(TracingLevel.INFO, $"SCBasePath - Found via Steam: {scp}");
-                    return scp;
-                }
-
-                // Method 5: Check Steam config files for custom library locations
-                scp = FindInstallationFromSteamConfig();
-                if (!string.IsNullOrEmpty(scp))
-                {
-                    Logger.Instance.LogMessage(TracingLevel.INFO, $"SCBasePath - Found via Steam config: {scp}");
-                    return scp;
-                }
-
-                Logger.Instance.LogMessage(TracingLevel.ERROR, "SCBasePath - Could not find Star Citizen installation. Please check your installation or set SCBasePath in appSettings.config");
-                return "";
             }
+
+            // Method 2: RSI Launcher configuration files (%APPDATA%\rsilauncher\)
+            scp = FindInstallationFromRSILauncher();
+            if (!string.IsNullOrEmpty(scp))
+            {
+                Logger.Instance.LogMessage(TracingLevel.INFO, $"SCBasePath - Found via RSI Launcher config: {scp}");
+                return scp;
+            }
+
+            // Method 3: Registry-based detection
+            scp = FindLauncherFromRegistry();
+            if (!string.IsNullOrEmpty(scp))
+            {
+                scp = Path.GetDirectoryName(scp); // Get parent directory
+                if (IsValidStarCitizenInstallation(scp))
+                {
+                    Logger.Instance.LogMessage(TracingLevel.INFO, $"SCBasePath - Found via registry: {scp}");
+                    return scp;
+                }
+            }
+
+            // Method 4: Common path scanning
+            scp = FindInstallationFromCommonPaths();
+            if (!string.IsNullOrEmpty(scp))
+            {
+                Logger.Instance.LogMessage(TracingLevel.INFO, $"SCBasePath - Found via common paths: {scp}");
+                return scp;
+            }
+
+            // Method 4: Steam library scanning
+            scp = FindInstallationFromSteamPaths();
+            if (!string.IsNullOrEmpty(scp))
+            {
+                Logger.Instance.LogMessage(TracingLevel.INFO, $"SCBasePath - Found via Steam: {scp}");
+                return scp;
+            }
+
+            // Method 5: Check Steam config files for custom library locations
+            scp = FindInstallationFromSteamConfig();
+            if (!string.IsNullOrEmpty(scp))
+            {
+                Logger.Instance.LogMessage(TracingLevel.INFO, $"SCBasePath - Found via Steam config: {scp}");
+                return scp;
+            }
+
+            Logger.Instance.LogMessage(TracingLevel.ERROR, "SCBasePath - Could not find Star Citizen installation. Please check your installation or set SCBasePath in appSettings.config");
+            return "";
         }
 
         /// <summary>
@@ -620,7 +645,6 @@ namespace SCJMapper_V2.SC
         {
             get
             {
-                Logger.Instance.LogMessage(TracingLevel.DEBUG, "SCClientPath - Entry");
                 string scp = SCBasePath;
 #if DEBUG
                 //***************************************
@@ -631,59 +655,80 @@ namespace SCJMapper_V2.SC
 
                 // Check configuration for PTU vs LIVE
                 bool usePTU = UsePTU;
-                Logger.Instance.LogMessage(TracingLevel.DEBUG, $"Using PTU: {usePTU}");
 
-                string targetFolder = usePTU ? "PTU" : "LIVE";
+                lock (ClientPathCacheLock)
+                {
+                    if (cachedClientPathSet &&
+                        cachedClientPathUsePtu == usePTU &&
+                        string.Equals(cachedClientBasePath, scp, StringComparison.OrdinalIgnoreCase))
+                    {
+                        return cachedClientPath;
+                    }
 
-                // Try Structure 1: RSI Launcher style - basepath/StarCitizen/LIVE or PTU
-                string rsiStylePath = Path.Combine(scp, "StarCitizen", targetFolder);
+                    Logger.Instance.LogMessage(TracingLevel.DEBUG, "SCClientPath - Entry");
+                    Logger.Instance.LogMessage(TracingLevel.DEBUG, $"Using PTU: {usePTU}");
+
+                    cachedClientPath = ResolveClientPath(scp, usePTU);
+                    cachedClientPathUsePtu = usePTU;
+                    cachedClientBasePath = scp;
+                    cachedClientPathSet = true;
+                    return cachedClientPath;
+                }
+            }
+        }
+
+        private static string ResolveClientPath(string scp, bool usePTU)
+        {
+            string targetFolder = usePTU ? "PTU" : "LIVE";
+
+            // Try Structure 1: RSI Launcher style - basepath/StarCitizen/LIVE or PTU
+            string rsiStylePath = Path.Combine(scp, "StarCitizen", targetFolder);
+            if (Directory.Exists(rsiStylePath) && File.Exists(Path.Combine(rsiStylePath, "Data.p4k")))
+            {
+                Logger.Instance.LogMessage(TracingLevel.INFO, $"Using RSI style {targetFolder} installation: {rsiStylePath}");
+                return rsiStylePath;
+            }
+
+            // Try Structure 2: Direct style - basepath/LIVE or PTU (user points to StarCitizen folder)
+            string directStylePath = Path.Combine(scp, targetFolder);
+            if (Directory.Exists(directStylePath) && File.Exists(Path.Combine(directStylePath, "Data.p4k")))
+            {
+                Logger.Instance.LogMessage(TracingLevel.INFO, $"Using direct style {targetFolder} installation: {directStylePath}");
+                return directStylePath;
+            }
+
+            // If PTU was requested but not found, try fallback to LIVE
+            if (usePTU)
+            {
+                Logger.Instance.LogMessage(TracingLevel.WARN, "PTU requested but not found, trying LIVE fallback");
+
+                // Try RSI style LIVE
+                rsiStylePath = Path.Combine(scp, "StarCitizen", "LIVE");
                 if (Directory.Exists(rsiStylePath) && File.Exists(Path.Combine(rsiStylePath, "Data.p4k")))
                 {
-                    Logger.Instance.LogMessage(TracingLevel.INFO, $"Using RSI style {targetFolder} installation: {rsiStylePath}");
+                    Logger.Instance.LogMessage(TracingLevel.INFO, $"Fallback to RSI style LIVE: {rsiStylePath}");
                     return rsiStylePath;
                 }
 
-                // Try Structure 2: Direct style - basepath/LIVE or PTU (user points to StarCitizen folder)
-                string directStylePath = Path.Combine(scp, targetFolder);
+                // Try direct style LIVE
+                directStylePath = Path.Combine(scp, "LIVE");
                 if (Directory.Exists(directStylePath) && File.Exists(Path.Combine(directStylePath, "Data.p4k")))
                 {
-                    Logger.Instance.LogMessage(TracingLevel.INFO, $"Using direct style {targetFolder} installation: {directStylePath}");
+                    Logger.Instance.LogMessage(TracingLevel.INFO, $"Fallback to direct style LIVE: {directStylePath}");
                     return directStylePath;
                 }
 
-                // If PTU was requested but not found, try fallback to LIVE
-                if (usePTU)
+                // Try legacy PTU structure
+                string legacyPtuPath = Path.Combine(scp, "StarCitizenPTU", "LIVE");
+                if (Directory.Exists(legacyPtuPath) && File.Exists(Path.Combine(legacyPtuPath, "Data.p4k")))
                 {
-                    Logger.Instance.LogMessage(TracingLevel.WARN, "PTU requested but not found, trying LIVE fallback");
-                    
-                    // Try RSI style LIVE
-                    rsiStylePath = Path.Combine(scp, "StarCitizen", "LIVE");
-                    if (Directory.Exists(rsiStylePath) && File.Exists(Path.Combine(rsiStylePath, "Data.p4k")))
-                    {
-                        Logger.Instance.LogMessage(TracingLevel.INFO, $"Fallback to RSI style LIVE: {rsiStylePath}");
-                        return rsiStylePath;
-                    }
-
-                    // Try direct style LIVE
-                    directStylePath = Path.Combine(scp, "LIVE");
-                    if (Directory.Exists(directStylePath) && File.Exists(Path.Combine(directStylePath, "Data.p4k")))
-                    {
-                        Logger.Instance.LogMessage(TracingLevel.INFO, $"Fallback to direct style LIVE: {directStylePath}");
-                        return directStylePath;
-                    }
-
-                    // Try legacy PTU structure
-                    string legacyPtuPath = Path.Combine(scp, "StarCitizenPTU", "LIVE");
-                    if (Directory.Exists(legacyPtuPath) && File.Exists(Path.Combine(legacyPtuPath, "Data.p4k")))
-                    {
-                        Logger.Instance.LogMessage(TracingLevel.INFO, $"Using legacy PTU: {legacyPtuPath}");
-                        return legacyPtuPath;
-                    }
+                    Logger.Instance.LogMessage(TracingLevel.INFO, $"Using legacy PTU: {legacyPtuPath}");
+                    return legacyPtuPath;
                 }
-
-                Logger.Instance.LogMessage(TracingLevel.ERROR, $"SCClientPath - Could not find Star Citizen {targetFolder} installation in: {scp}");
-                return "";
             }
+
+            Logger.Instance.LogMessage(TracingLevel.ERROR, $"SCClientPath - Could not find Star Citizen {targetFolder} installation in: {scp}");
+            return "";
         }
 
         /// <summary>
