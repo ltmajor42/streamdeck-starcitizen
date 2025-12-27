@@ -2,7 +2,7 @@
   "Actions": [
     {
       "Icon": "Images/ActionKey",
-      "Name": "Static Button",
+      "Name": "Action Key",
       "States": [
         {
           "Image": "Images/ActionKey",
@@ -11,9 +11,9 @@
         }
       ],
       "SupportedInMultiActions": true,
-      "Tooltip": "Star Citizen Static Button",
+      "Tooltip": "Star Citizen Action Key",
       "UUID": "com.mhwlng.starcitizen.static",
-      "PropertyInspectorPath": "PropertyInspector/StarCitizen/Static.html"
+      "PropertyInspectorPath": "PropertyInspector/StarCitizen/ActionKey.html"
     },
     {
       "Icon": "Images/pluginIcon",
@@ -75,7 +75,7 @@
     },
     {
       "Icon": "Images/Repeataction0",
-      "Name": "Increase / Decrease (Hold)",
+      "Name": "Repeat Action",
       "States": [
         {
           "Image": "Images/Repeataction0",
@@ -91,7 +91,7 @@
       "SupportedInMultiActions": true,
       "Tooltip": "Hold to repeat a Star Citizen function until released",
       "UUID": "com.mhwlng.starcitizen.holdrepeat",
-      "PropertyInspectorPath": "PropertyInspector/StarCitizen/IncreaseDecreaseHold.html"
+      "PropertyInspectorPath": "PropertyInspector/StarCitizen/Repeataction.html"
     },
     {
       "Icon": "Images/ActionDelay0",

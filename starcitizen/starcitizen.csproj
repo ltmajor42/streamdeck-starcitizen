@@ -183,12 +183,12 @@
     <Compile Include="Buttons\StateMemory.cs" />
     <Compile Include="Buttons\StarCitizenDialBase.cs" />
     <Compile Include="Buttons\Dial.cs" />
-    <Compile Include="Buttons\IncreaseDecreaseHold.cs" />
+    <Compile Include="Buttons\Repeataction.cs" />
     <Compile Include="Buttons\Momentary.cs" />
     <Compile Include="Buttons\StreamDeckCommon.cs" />
     <Compile Include="Buttons\StreamDeckEventArgsExtensions.cs" />
     <Compile Include="Buttons\StarCitizenKeypadBase.cs" />
-    <Compile Include="Buttons\Static.cs" />
+    <Compile Include="Buttons\ActionKey.cs" />
     <Compile Include="CommandTools.cs" />
     <Compile Include="CryXMLlib\Conversions.cs" />
     <Compile Include="CryXMLlib\CryIXml.cs" />
@@ -327,13 +327,13 @@
     <Content Include="PropertyInspector\StarCitizen\DualAction.html">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="PropertyInspector\StarCitizen\IncreaseDecreaseHold.html">
+    <Content Include="PropertyInspector\StarCitizen\Repeataction.html">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <Content Include="PropertyInspector\StarCitizen\ActionDelay.html">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="PropertyInspector\StarCitizen\Static.html">
+    <Content Include="PropertyInspector\StarCitizen\ActionKey.html">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <Content Include="Sounds\257357__brnck__button-click.wav">
