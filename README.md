@@ -5,110 +5,81 @@
 > 🔗 **This is an updated fork of [mhwlng/streamdeck-starcitizen](https://github.com/mhwlng/streamdeck-starcitizen)**  
 > The original project is archived. This fork adds improved auto-detection, search functionality, and bug fixes.
 
-![Elgato Stream Deck button plugin for Star Citizen](https://i.imgur.com/FSHsXRG.png)
-
-		## What's New in This Fork
-
-		## Cosmetic Key (Visual Only)
-			The **Cosmetic Key** action is a visual-only tile for your Stream Deck.
-
-		### What it does
-			- Appears in the Stream Deck action list under the **Star Citizen** category.
-			- **Does not send any keys or actions** when pressed.
-			- Useful for:
-			  - Labels
-			  - Images / icons / separators
-			  - Visual layout / organization on profiles
-
-		### Notes
-			- This is intentionally cosmetic and does not interact with Star Citizen.
-
-		## State Memory (Soft Sync Toggle)
-			The **State Memory** button is designed for toggleable systems in Star Citizen that have no reliable API feedback.
-
-			### How it works
-			- **Short Press:** Sends the selected Star Citizen keybind and flips the Stream Deck indicator (ON ↔ OFF).
-			- **Long Press:** Flips only the Stream Deck indicator (no key sent), allowing manual re-sync if the in-game state changed externally.
-			- Optional **Short Press Sound** and **Long Press Sound** provide tactile feedback.
-
-			### Key characteristics
-			- Remembers its last state across presses
-			- Manual “soft sync” via long press to correct mismatches
-			- Ideal for:
-			  - Landing gear
-			  - Ship lights
-			  - VTOL
-			  - Doors or power toggles
-
-			### Example use case
-				If you turn off ship lights in-game with a cockpit switch, the Stream Deck may show “ON.”  
-				Hold the button (long press) to resync it — no key is sent, but your deck stays visually aligned.
-
-				---
-
-		## Momentary Button
-			The Momentary Button is designed for immersive, one-shot actions in Star Citizen where visual feedback matters, but no persistent state is required.
-			Unlike a toggle button, the Momentary Button does not maintain an on/off state.
-
-			### How it works
-			- The user selects a Star Citizen function (same system as the Static Button).
-			- Two images are configured directly in the Stream Deck UI:
-			  - **Idle Image** – default appearance.
-			  - **Active Image** – shown temporarily when the button is pressed.
-			- When pressed:
-			  - The configured Star Citizen keybind is sent once.
-			  - The button image immediately switches to the Active Image.
-			- After a user-defined delay (in milliseconds):
-			  - The button automatically reverts to the Idle Image.
-			  - No second press is required.
-
-			### Key characteristics
-			- One-shot action (non-toggle)
-			- Temporary visual feedback only
-			- Fully configurable delay
-			- Uses the same function selector and search system as the Static Button
-			- Supports drag-and-drop images via the Stream Deck UI
-
-			### Example use cases
-			- Engine start
-			- Landing gear activation
-			- Powering ship systems
-			- System priming or initialization
-			- Any action where a brief visual cue improves immersion
-
-		## Increase / Decrease (Hold)
-			The **Increase / Decrease (Hold)** button repeatedly sends a Star Citizen function while the button stays pressed—perfect for incremental adjustments that mirror holding a keyboard key or HOTAS control.
-
-			### How it works
-			- **Press and hold:** Sends the selected function immediately, then repeats it automatically at the configured repeat rate until you release the button.
-			- **Release:** Repetition stops instantly and the button returns to the Idle Image with no lingering state.
-			- **Visual feedback:** Uses two images—**Idle** (not pressed) and **Active** (while held). The Active image only shows during the hold.
-			- **Audio cues (optional):** Configure separate sounds for repetition start and stop.
-
-			### Key settings
-			- **Star Citizen Function:** Any mapped function that benefits from continuous input (throttle nudges, gimbal assist, menu scrolling, etc.).
-			- **Repeat Rate (ms):** Controls how quickly the function re-triggers while held. Recommended presets:
-			  - 60–80ms: fast/combat
-			  - 100ms: default
-			  - 120–150ms: precise
-			- **Idle Image / Active Image:** Shown when not pressed vs. during the hold. Always snaps back to Idle on release.
-			- **Start / Stop Sound (optional):** Short cues when the repeating loop starts or stops.
-
-			### One-line summary
-				Hold to adjust continuously. Release to stop and return to idle instantly.
-
-
 ## What's New in This Fork
 
 - **Automatic RSI Launcher Detection** - (Hopefully) No more manual path configuration! The plugin reads your RSI Launcher settings automatically.
-
 - **Search Functionality** - Quickly find keybindings with the new search box in the Property Inspector.
-
 - **Simplified Configuration** - Only need to set `SCBasePath` if auto-detection fails (instead of SCData_p4k and SCClientProfilePath).
-
 - **Bug Fixes & Improvements** - Various fixes to improve stability and usability.
 
 See [CHANGELOG.md](CHANGELOG.md) for full details.
+
+## Cosmetic Key (Visual Only)
+ The **Cosmetic Key** action is a visual-only tile for your Stream Deck.
+		
+### What it does
+  - Appears in the Stream Deck action list under the **Star Citizen** category.
+  - **Does not send any keys or actions** when pressed.
+  - Useful for:
+  - Labels
+  - Images / icons / separators
+  - Visual layout / organization on profiles
+  ### Notes
+  - This is intentionally cosmetic and does not interact with Star Citizen.
+
+## State Memory (Soft Sync Toggle)
+The **State Memory** button is designed for toggleable systems in Star Citizen that have no reliable API feedback.
+		
+### How it works
+  - **Short Press:** Sends the selected Star Citizen keybind and flips the Stream Deck indicator (ON ↔ OFF).
+  - **Long Press:** Flips only the Stream Deck indicator (no key sent), allowing manual re-sync if the in-game state changed externally.
+  - Optional **Short Press Sound** and **Long Press Sound** provide tactile feedback.
+
+### Key characteristics
+ - Remembers its last state across presses
+ - Manual “soft sync” via long press to correct mismatches
+ - Ideal for:
+ - Landing gear
+ - Ship lights
+ - VTOL
+ - Doors or power toggles
+
+ ### Example use case
+  If you turn off ship lights in-game with a cockpit switch, the Stream Deck may show “ON.”  
+  Hold the button (long press) to resync it — no key is sent, but your deck stays visually aligned.
+
+
+## Momentary Button
+  The Momentary Button is designed for immersive, one-shot actions in Star Citizen where visual feedback matters, but no persistent state is required. Unlike a toggle button, the Momentary Button does not maintain an on/off state.
+
+  ### How it works
+  - The user selects a Star Citizen function (same system as the Static Button).
+  - Two images are configured directly in the Stream Deck UI:
+  - **Idle Image** – default appearance.
+  - **Active Image** – shown temporarily when the button is pressed.
+  - When pressed:
+  - The configured Star Citizen keybind is sent once.
+  - The button image immediately switches to the Active Image.
+  - After a user-defined delay (in milliseconds):
+  - The button automatically reverts to the Idle Image.
+  - No second press is required.
+
+  ### Key characteristics
+  - One-shot action (non-toggle)
+  - Temporary visual feedback only
+  - Fully configurable delay
+  - Uses the same function selector and search system as the Static Button
+  - Supports drag-and-drop images via the Stream Deck UI
+
+  ### Example use cases
+  - Engine start
+  - Landing gear activation
+  - Powering ship systems
+  - System priming or initialization
+  - Any action where a brief visual cue improves immersion
+
+
+
 
 ---
 # Original README:
