@@ -46,6 +46,10 @@ namespace starcitizen.Buttons
         PluginSettings settings;
         private CachedSound _clickSound = null;
 
+        private static readonly object FunctionsCacheLock = new();
+        private static JArray cachedFunctions;
+        private static int cachedFunctionsVersion = -1;
+
 
         public ActionKey(SDConnection connection, InitialPayload payload) : base(connection, payload)
         {
@@ -248,7 +252,7 @@ namespace starcitizen.Buttons
                 };
 
                 Connection.SendToPropertyInspectorAsync(payload);
-                Logger.Instance.LogMessage(TracingLevel.INFO, $"Sent {functionsData.Count} function groups to Property Inspector");
+                Logger.Instance.LogMessage(TracingLevel.DEBUG, $"Sent {functionsData.Count} function groups to Property Inspector");
             }
             catch (Exception ex)
             {
@@ -259,9 +263,18 @@ namespace starcitizen.Buttons
         private JArray BuildFunctionsData()
         {
             var result = new JArray();
+            int bindingsVersion = Program.KeyBindingsVersion;
 
             try
             {
+                lock (FunctionsCacheLock)
+                {
+                    if (cachedFunctions != null && cachedFunctionsVersion == bindingsVersion)
+                    {
+                        return (JArray)cachedFunctions.DeepClone();
+                    }
+                }
+
                 var keyboard = KeyboardLayouts.GetThreadKeyboardLayout();
                 CultureInfo culture;
 
@@ -372,6 +385,12 @@ namespace starcitizen.Buttons
                     }
 
                     result.Add(unboundGroup);
+                }
+
+                lock (FunctionsCacheLock)
+                {
+                    cachedFunctions = (JArray)result.DeepClone();
+                    cachedFunctionsVersion = bindingsVersion;
                 }
             }
             catch (Exception ex)
