@@ -249,16 +249,13 @@ namespace starcitizen.Buttons
             {
                 var bytes = File.ReadAllBytes(path);
                 var extension = Path.GetExtension(path)?.ToLowerInvariant();
-                var mime = "image/png";
-
-                if (extension == ".jpg" || extension == ".jpeg")
+                var mime = extension switch
                 {
-                    mime = "image/jpeg";
-                }
-                else if (extension == ".gif")
-                {
-                    mime = "image/gif";
-                }
+                    ".jpg" => "image/jpeg",
+                    ".jpeg" => "image/jpeg",
+                    ".gif" => "image/gif",
+                    _ => "image/png"
+                };
 
                 return $"data:{mime};base64,{Convert.ToBase64String(bytes)}";
             }
