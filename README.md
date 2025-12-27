@@ -5,13 +5,21 @@
 > 🔗 **This is an updated fork of [mhwlng/streamdeck-starcitizen](https://github.com/mhwlng/streamdeck-starcitizen)**  
 > The original project is archived. This fork adds improved auto-detection, search functionality, and bug fixes.
 
-![Elgato Stream Deck button plugin for Star Citizen](https://i.imgur.com/FSHsXRG.png)
+## What's New in This Fork
 
-		## What's New in This Fork
+- **Automatic RSI Launcher Detection** - (Hopefully) No more manual path configuration! The plugin reads your RSI Launcher settings automatically.
 
-		## Cosmetic Key (Visual Only)
-			The **Cosmetic Key** action is a visual-only tile for your Stream Deck.
+- **Search Functionality** - Quickly find keybindings with the new search box in the Property Inspector.
 
+- **Simplified Configuration** - Only need to set `SCBasePath` if auto-detection fails (instead of SCData_p4k and SCClientProfilePath).
+
+- **Bug Fixes & Improvements** - Various fixes to improve stability and usability.
+
+See [CHANGELOG.md](CHANGELOG.md) for full details.
+
+	## Cosmetic Key (Visual Only)
+		The **Cosmetic Key** action is a visual-only tile for your Stream Deck.
+		
 		### What it does
 			- Appears in the Stream Deck action list under the **Star Citizen** category.
 			- **Does not send any keys or actions** when pressed.
@@ -19,13 +27,12 @@
 			  - Labels
 			  - Images / icons / separators
 			  - Visual layout / organization on profiles
-
 		### Notes
 			- This is intentionally cosmetic and does not interact with Star Citizen.
 
-		## State Memory (Soft Sync Toggle)
-			The **State Memory** button is designed for toggleable systems in Star Citizen that have no reliable API feedback.
-
+## State Memory (Soft Sync Toggle)
+		The **State Memory** button is designed for toggleable systems in Star Citizen that have no reliable API feedback.
+		
 			### How it works
 			- **Short Press:** Sends the selected Star Citizen keybind and flips the Stream Deck indicator (ON ↔ OFF).
 			- **Long Press:** Flips only the Stream Deck indicator (no key sent), allowing manual re-sync if the in-game state changed externally.
@@ -44,11 +51,9 @@
 				If you turn off ship lights in-game with a cockpit switch, the Stream Deck may show “ON.”  
 				Hold the button (long press) to resync it — no key is sent, but your deck stays visually aligned.
 
-				---
 
-		## Momentary Button
-			The Momentary Button is designed for immersive, one-shot actions in Star Citizen where visual feedback matters, but no persistent state is required.
-			Unlike a toggle button, the Momentary Button does not maintain an on/off state.
+## Momentary Button
+		The Momentary Button is designed for immersive, one-shot actions in Star Citizen where visual feedback matters, but no persistent state is required. Unlike a toggle button, the Momentary Button does not maintain an on/off state.
 
 			### How it works
 			- The user selects a Star Citizen function (same system as the Static Button).
@@ -77,17 +82,7 @@
 			- Any action where a brief visual cue improves immersion
 
 
-## What's New in This Fork
 
-- **Automatic RSI Launcher Detection** - (Hopefully) No more manual path configuration! The plugin reads your RSI Launcher settings automatically.
-
-- **Search Functionality** - Quickly find keybindings with the new search box in the Property Inspector.
-
-- **Simplified Configuration** - Only need to set `SCBasePath` if auto-detection fails (instead of SCData_p4k and SCClientProfilePath).
-
-- **Bug Fixes & Improvements** - Various fixes to improve stability and usability.
-
-See [CHANGELOG.md](CHANGELOG.md) for full details.
 
 ---
 # Original README:
