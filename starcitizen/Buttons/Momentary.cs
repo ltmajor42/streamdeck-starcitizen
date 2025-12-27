@@ -36,6 +36,7 @@ namespace starcitizen.Buttons
         private PluginSettings settings;
         private CachedSound _clickSound;
         private CancellationTokenSource resetToken;
+        private int visualSequence;
 
         // 🔑 runtime-authoritative delay (updated via ReceivedSettings)
         private int currentDelay = 1000;
@@ -104,13 +105,23 @@ namespace starcitizen.Buttons
 
         // ================= MOMENTARY VISUAL =================
 
-        private async void TriggerMomentaryVisual(int delay)
+        private void TriggerMomentaryVisual(int delay)
         {
             resetToken?.Cancel();
+
             resetToken = new CancellationTokenSource();
             var token = resetToken.Token;
 
-            await Connection.SetStateAsync(1); // ACTIVE
+            // increment the visual sequence so older cycles cannot override newer ones
+            var sequence = Interlocked.Increment(ref visualSequence);
+
+            _ = RunMomentaryVisualAsync(delay, token, sequence);
+        }
+
+        private async Task RunMomentaryVisualAsync(int delay, CancellationToken token, int sequence)
+        {
+            // always ensure we start (or restart) at ACTIVE
+            await Connection.SetStateAsync(1);
 
             try
             {
@@ -118,10 +129,16 @@ namespace starcitizen.Buttons
             }
             catch (TaskCanceledException)
             {
-                return;
+                // swallowed; we still want the finally guard below
             }
-
-            await Connection.SetStateAsync(0); // BACK TO IDLE
+            finally
+            {
+                // only the latest sequence is allowed to revert to idle
+                if (sequence == visualSequence)
+                {
+                    await Connection.SetStateAsync(0); // BACK TO IDLE
+                }
+            }
         }
 
         // ================= SETTINGS =================
