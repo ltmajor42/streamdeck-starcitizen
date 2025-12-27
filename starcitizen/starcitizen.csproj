@@ -248,8 +248,8 @@
   </ItemGroup>
   <ItemGroup>
     <Content Include="check_updates.ps1" />
-    <Content Include="Images\Actiondelay0.png" />
-    <Content Include="Images\Actiondelay1.png" />
+    <Content Include="Images\ActionDelay0.png" />
+    <Content Include="Images\ActionDelay1.png" />
     <Content Include="Images\ActionKey.png" />
     <Content Include="Images\categoryIcon.png" />
     <Content Include="Images\Cosmetic.png" />
