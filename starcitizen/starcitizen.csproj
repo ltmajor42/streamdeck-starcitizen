@@ -210,7 +210,9 @@
     <Compile Include="p4kFile\p4kSignatures.cs" />
     <Compile Include="p4kFile\p4kZ64EndOfCentralDirLocator.cs" />
     <Compile Include="p4kFile\p4kZ64EndOfCentralDirRecord.cs" />
-    <Compile Include="Program.cs" />
+    <Compile Include="Program.cs">
+      <SubType>Component</SubType>
+    </Compile>
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="SC\DProfileReader.cs" />
     <Compile Include="SC\SCDefaultProfile.cs" />

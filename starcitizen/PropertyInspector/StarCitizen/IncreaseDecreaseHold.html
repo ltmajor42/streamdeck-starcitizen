@@ -79,98 +79,6 @@
         </div>
     </div>
 
-    <!-- IDLE IMAGE -->
-    <div class="sdpi-item">
-        <div class="sdpi-item-label">Idle Image</div>
-        <div class="sdpi-item-group file">
-            <input class="sdpi-item-value sdProperty sdFile"
-                   type="file"
-                   id="idleImage"
-                   accept=".png,.jpg,.jpeg,.gif"
-                   oninput="setSettings(); updateClearButton('idleImage', 'dvClearIdle');"
-                   onchange="setSettings(); updateClearButton('idleImage', 'dvClearIdle');">
-            <label class="sdpi-file-info" id="idleImageFilename">No file...</label>
-            <label class="sdpi-file-label" for="idleImage">Choose file...</label>
-        </div>
-    </div>
-
-    <!-- CLEAR IDLE IMAGE -->
-    <div class="sdpi-item hidden" id="dvClearIdle">
-        <div class="sdpi-item-label"></div>
-        <button class="sdpi-item-value" onclick="clearFile('idleImage', 'dvClearIdle')">
-            Clear idle image
-        </button>
-    </div>
-
-    <!-- ACTIVE IMAGE -->
-    <div class="sdpi-item">
-        <div class="sdpi-item-label">Active Image</div>
-        <div class="sdpi-item-group file">
-            <input class="sdpi-item-value sdProperty sdFile"
-                   type="file"
-                   id="activeImage"
-                   accept=".png,.jpg,.jpeg,.gif"
-                   oninput="setSettings(); updateClearButton('activeImage', 'dvClearActive');"
-                   onchange="setSettings(); updateClearButton('activeImage', 'dvClearActive');">
-            <label class="sdpi-file-info" id="activeImageFilename">No file...</label>
-            <label class="sdpi-file-label" for="activeImage">Choose file...</label>
-        </div>
-    </div>
-
-    <!-- CLEAR ACTIVE IMAGE -->
-    <div class="sdpi-item hidden" id="dvClearActive">
-        <div class="sdpi-item-label"></div>
-        <button class="sdpi-item-value" onclick="clearFile('activeImage', 'dvClearActive')">
-            Clear active image
-        </button>
-    </div>
-
-    <!-- START SOUND -->
-    <div class="sdpi-item">
-        <div class="sdpi-item-label">Start Sound</div>
-        <div class="sdpi-item-group file">
-            <input class="sdpi-item-value sdProperty sdFile"
-                   type="file"
-                   id="startSound"
-                   accept=".wav"
-                   oninput="setSettings(); updateClearButton('startSound', 'dvClearStart');"
-                   onchange="setSettings(); updateClearButton('startSound', 'dvClearStart');">
-            <label class="sdpi-file-info" id="startSoundFilename">No file...</label>
-            <label class="sdpi-file-label" for="startSound">Choose file...</label>
-        </div>
-    </div>
-
-    <!-- CLEAR START SOUND -->
-    <div class="sdpi-item hidden" id="dvClearStart">
-        <div class="sdpi-item-label"></div>
-        <button class="sdpi-item-value" onclick="clearFile('startSound', 'dvClearStart')">
-            Clear start sound
-        </button>
-    </div>
-
-    <!-- STOP SOUND -->
-    <div class="sdpi-item">
-        <div class="sdpi-item-label">Stop Sound</div>
-        <div class="sdpi-item-group file">
-            <input class="sdpi-item-value sdProperty sdFile"
-                   type="file"
-                   id="stopSound"
-                   accept=".wav"
-                   oninput="setSettings(); updateClearButton('stopSound', 'dvClearStop');"
-                   onchange="setSettings(); updateClearButton('stopSound', 'dvClearStop');">
-            <label class="sdpi-file-info" id="stopSoundFilename">No file...</label>
-            <label class="sdpi-file-label" for="stopSound">Choose file...</label>
-        </div>
-    </div>
-
-    <!-- CLEAR STOP SOUND -->
-    <div class="sdpi-item hidden" id="dvClearStop">
-        <div class="sdpi-item-label"></div>
-        <button class="sdpi-item-value" onclick="clearFile('stopSound', 'dvClearStop')">
-            Clear stop sound
-        </button>
-    </div>
-
     <div class="sdpi-item no-results hidden" id="noResults">
         No functions match your search.
     </div>
@@ -178,7 +86,7 @@
     <div class="sdpi-item">
         <div class="sdpi-item-label"></div>
         <div class="sdpi-item-value note">
-            One-line summary: Hold to adjust continuously. Release to stop and return to idle instantly.
+            Images are managed by Stream Deck (State 0 = idle, State 1 = active). Hold to repeat. Release to stop.
         </div>
     </div>
 
@@ -192,22 +100,15 @@
     /* Preserve selected function if payload arrives before functions list */
     const originalLoadConfiguration = loadConfiguration;
     loadConfiguration = function (payload) {
-
         if (payload && payload.function !== undefined) {
             savedFunctionValue = payload.function;
         }
-
         originalLoadConfiguration(payload);
 
         if (functionsLoaded && savedFunctionValue) {
             const sel = document.getElementById('function');
             if (sel) sel.value = savedFunctionValue;
         }
-
-        updateClearButton('idleImage', 'dvClearIdle');
-        updateClearButton('activeImage', 'dvClearActive');
-        updateClearButton('startSound', 'dvClearStart');
-        updateClearButton('stopSound', 'dvClearStop');
     };
 
     function populateDropdown(functions) {
@@ -279,31 +180,8 @@
             : '';
     }
 
-    function clearFile(id, buttonId) {
-        const input = document.getElementById(id);
-        const label = document.getElementById(id + 'Filename');
-
-        if (input) input.value = '';
-        if (label) label.textContent = 'No file...';
-
-        setSettingsToPlugin({ [id]: '' });
-        updateClearButton(id, buttonId);
-    }
-
-    function updateClearButton(id, buttonId) {
-        const input = document.getElementById(id);
-        const clearBtn = document.getElementById(buttonId);
-        const label = document.getElementById(id + 'Filename');
-
-        if (!input || !clearBtn) return;
-
-        const hasValue = !!input.value || (label && label.textContent && label.textContent !== 'No file...');
-        clearBtn.classList.toggle('hidden', !hasValue);
-    }
-
     /* Hook into websocket to receive function list */
     document.addEventListener('websocketCreate', function () {
-
         const originalOnMessage = websocket.onmessage;
 
         websocket.onmessage = function (evt) {
@@ -323,7 +201,6 @@
     });
 
     document.addEventListener('DOMContentLoaded', function () {
-
         document.getElementById('functionSearch')
             .addEventListener('input', function () {
                 clearTimeout(this.searchTimeout);
@@ -335,11 +212,6 @@
                 document.getElementById('functionSearch').value = '';
                 document.getElementById('searchResults').textContent = '';
             });
-
-        updateClearButton('idleImage', 'dvClearIdle');
-        updateClearButton('activeImage', 'dvClearActive');
-        updateClearButton('startSound', 'dvClearStart');
-        updateClearButton('stopSound', 'dvClearStop');
     });
 </script>
 

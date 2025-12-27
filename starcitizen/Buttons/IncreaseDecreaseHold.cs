@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Globalization;
-using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -22,9 +21,7 @@ namespace starcitizen.Buttons
                 return new PluginSettings
                 {
                     Function = string.Empty,
-                    RepeatRate = 100,
-                    IdleImage = string.Empty,
-                    ActiveImage = string.Empty
+                    RepeatRate = 100
                 };
             }
 
@@ -33,32 +30,12 @@ namespace starcitizen.Buttons
 
             [JsonProperty(PropertyName = "repeatRate")]
             public int RepeatRate { get; set; }
-
-            [FilenameProperty]
-            [JsonProperty(PropertyName = "idleImage")]
-            public string IdleImage { get; set; }
-
-            [FilenameProperty]
-            [JsonProperty(PropertyName = "activeImage")]
-            public string ActiveImage { get; set; }
-
-            [FilenameProperty]
-            [JsonProperty(PropertyName = "startSound")]
-            public string StartSoundFilename { get; set; }
-
-            [FilenameProperty]
-            [JsonProperty(PropertyName = "stopSound")]
-            public string StopSoundFilename { get; set; }
         }
 
         private PluginSettings settings;
-        private CachedSound _startSound;
-        private CachedSound _stopSound;
         private CancellationTokenSource repeatToken;
 
         private int currentRepeatRate = 100;
-        private string idleImageBase64;
-        private string activeImageBase64;
         private bool isRepeating;
 
         public IncreaseDecreaseHold(SDConnection connection, InitialPayload payload)
@@ -75,8 +52,6 @@ namespace starcitizen.Buttons
             {
                 _ = Connection.SetSettingsAsync(JObject.FromObject(settings));
             }
-
-            LoadAssets();
 
             Connection.OnPropertyInspectorDidAppear += Connection_OnPropertyInspectorDidAppear;
             Connection.OnSendToPlugin += Connection_OnSendToPlugin;
@@ -95,7 +70,7 @@ namespace starcitizen.Buttons
 
             StreamDeckCommon.ForceStop = false;
 
-            if (payload?.Settings != null)
+            if (payload != null && payload.Settings != null)
             {
                 ParseRepeatRate(payload.Settings);
             }
@@ -117,8 +92,8 @@ namespace starcitizen.Buttons
             repeatToken = new CancellationTokenSource();
             isRepeating = true;
 
+            // Switch to "active" state (state 1 image is managed by Stream Deck UI)
             _ = Connection.SetStateAsync(1);
-            PlayStartSound();
 
             _ = Task.Run(() => RepeatWhileHeldAsync(keyInfo, currentRepeatRate, repeatToken.Token));
         }
@@ -132,8 +107,8 @@ namespace starcitizen.Buttons
 
             StopRepeater();
 
+            // Switch back to "idle" state (state 0 image is managed by Stream Deck UI)
             _ = Connection.SetStateAsync(0);
-            PlayStopSound();
         }
 
         public override void ReceivedSettings(ReceivedSettingsPayload payload)
@@ -143,8 +118,6 @@ namespace starcitizen.Buttons
                 Tools.AutoPopulateSettings(settings, payload.Settings);
                 ParseRepeatRate(payload.Settings);
             }
-
-            LoadAssets();
         }
 
         public override void Dispose()
@@ -194,130 +167,34 @@ namespace starcitizen.Buttons
 
         private void ParseRepeatRate(JObject settingsObj)
         {
-            if (settingsObj.TryGetValue("repeatRate", out var rateToken) &&
+            JToken rateToken;
+            if (settingsObj != null &&
+                settingsObj.TryGetValue("repeatRate", out rateToken) &&
                 int.TryParse(rateToken.ToString(), out var parsedRate))
             {
                 currentRepeatRate = Math.Max(1, parsedRate);
             }
-        }
-
-        private void LoadAssets()
-        {
-            LoadSounds();
-            LoadImages();
-        }
-
-        private void LoadSounds()
-        {
-            _startSound = LoadSound(settings.StartSoundFilename);
-            _stopSound = LoadSound(settings.StopSoundFilename);
-        }
-
-        private CachedSound LoadSound(string filename)
-        {
-            if (string.IsNullOrWhiteSpace(filename) || !File.Exists(filename))
+            else
             {
-                return null;
-            }
-
-            try
-            {
-                return new CachedSound(filename);
-            }
-            catch
-            {
-                return null;
+                currentRepeatRate = Math.Max(1, settings.RepeatRate);
             }
         }
 
-        private void LoadImages()
+        private void StopRepeater()
         {
-            idleImageBase64 = ConvertFileToBase64(GetImagePath(settings.IdleImage, "Momentary0.png"));
-            activeImageBase64 = ConvertFileToBase64(GetImagePath(settings.ActiveImage, "Momentary1.png"));
-
-            _ = ApplyImagesAsync();
-        }
-
-        private string ConvertFileToBase64(string path)
-        {
-            if (string.IsNullOrWhiteSpace(path) || !File.Exists(path))
+            if (repeatToken != null)
             {
-                return null;
-            }
-
-            try
-            {
-                var bytes = File.ReadAllBytes(path);
-                var extension = Path.GetExtension(path)?.ToLowerInvariant();
-                var mime = extension switch
+                try
                 {
-                    ".jpg" => "image/jpeg",
-                    ".jpeg" => "image/jpeg",
-                    ".gif" => "image/gif",
-                    _ => "image/png"
-                };
-
-                return $"data:{mime};base64,{Convert.ToBase64String(bytes)}";
-            }
-            catch (Exception ex)
-            {
-                Logger.Instance.LogMessage(TracingLevel.ERROR, $"Failed to load image {path}: {ex}");
-                return null;
-            }
-        }
-
-        private async Task ApplyImagesAsync()
-        {
-            try
-            {
-                if (!string.IsNullOrEmpty(idleImageBase64))
-                {
-                    await Connection.SetImageAsync(idleImageBase64, 0);
+                    repeatToken.Cancel();
                 }
+                catch { }
 
-                if (!string.IsNullOrEmpty(activeImageBase64))
-                {
-                    await Connection.SetImageAsync(activeImageBase64, 1);
-                }
-            }
-            catch (Exception ex)
-            {
-                Logger.Instance.LogMessage(TracingLevel.ERROR, $"Failed to apply images: {ex}");
-            }
-        }
-
-        private void PlayStartSound()
-        {
-            if (_startSound == null)
-            {
-                return;
+                repeatToken.Dispose();
+                repeatToken = null;
             }
 
-            try
-            {
-                AudioPlaybackEngine.Instance.PlaySound(_startSound);
-            }
-            catch (Exception ex)
-            {
-                Logger.Instance.LogMessage(TracingLevel.ERROR, $"Start sound failed: {ex}");
-            }
-        }
-
-        private void PlayStopSound()
-        {
-            if (_stopSound == null)
-            {
-                return;
-            }
-
-            try
-            {
-                AudioPlaybackEngine.Instance.PlaySound(_stopSound);
-            }
-            catch (Exception ex)
-            {
-                Logger.Instance.LogMessage(TracingLevel.ERROR, $"Stop sound failed: {ex}");
-            }
+            isRepeating = false;
         }
 
         private void Connection_OnPropertyInspectorDidAppear(object sender, EventArgs e)
@@ -329,7 +206,8 @@ namespace starcitizen.Buttons
         {
             var payload = e.ExtractPayload();
 
-            if (payload?["property_inspector"]?.ToString() == "propertyInspectorConnected")
+            if (payload != null && payload["property_inspector"] != null &&
+                payload["property_inspector"].ToString() == "propertyInspectorConnected")
             {
                 UpdatePropertyInspector();
             }
@@ -421,7 +299,7 @@ namespace starcitizen.Buttons
                             ["text"] = $"{action.UILabel}{(string.IsNullOrWhiteSpace(primaryBinding) ? "" : $" [{primaryBinding}]")}",
                             ["searchText"] =
                                 $"{action.UILabel.ToLower()} " +
-                                $"{action.UIDescription?.ToLower() ?? ""} " +
+                                $"{(action.UIDescription ?? "").ToLower()} " +
                                 $"{primaryBinding.ToLower()}"
                         });
                     }
@@ -438,36 +316,6 @@ namespace starcitizen.Buttons
             }
 
             return result;
-        }
-
-        private void StopRepeater()
-        {
-            if (repeatToken != null)
-            {
-                try
-                {
-                    repeatToken.Cancel();
-                }
-                catch { }
-
-                repeatToken.Dispose();
-                repeatToken = null;
-            }
-
-            isRepeating = false;
-        }
-
-        private string GetImagePath(string configuredPath, string fallbackFileName)
-        {
-            if (!string.IsNullOrWhiteSpace(configuredPath) && File.Exists(configuredPath))
-            {
-                return configuredPath;
-            }
-
-            var baseDir = AppDomain.CurrentDomain.BaseDirectory;
-            var defaultPath = Path.Combine(baseDir, "Images", fallbackFileName);
-
-            return File.Exists(defaultPath) ? defaultPath : null;
         }
     }
 }
