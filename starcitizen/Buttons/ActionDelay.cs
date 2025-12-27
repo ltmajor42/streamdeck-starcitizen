@@ -1,4 +1,6 @@
-﻿using System;
+﻿// File: Buttons/ActionDelay.cs
+
+using System;
 using System.Globalization;
 using System.IO;
 using System.Linq;
@@ -56,7 +58,6 @@ namespace starcitizen.Buttons
             public string ClickSoundFilename { get; set; }
         }
 
-        private const string TransparentPixel = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMB/6XK5esAAAAASUVORK5CYII=";
         private const int MinExecutionDelay = 100;
         private const int MaxExecutionDelay = 5000;
         private const int MinConfirmationDuration = 100;
@@ -68,12 +69,15 @@ namespace starcitizen.Buttons
 
         private PluginSettings settings;
         private CachedSound clickSound;
+
         private DelayState currentState = DelayState.Idle;
 
-        private CancellationTokenSource executionCts;
-        private CancellationTokenSource confirmationCts;
+        private CancellationTokenSource pendingCts;
+        private CancellationTokenSource confirmCts;
+
         private Timer blinkTimer;
-        private bool blinkVisible = true;
+        private int blinkGuard;
+        private uint blinkState; // 0 or 1
 
         public ActionDelay(SDConnection connection, InitialPayload payload) : base(connection, payload)
         {
@@ -83,7 +87,7 @@ namespace starcitizen.Buttons
             {
                 Tools.AutoPopulateSettings(settings, payload.Settings);
                 ClampSettings();
-                HandleFileNames();
+                LoadClickSound();
             }
             else
             {
@@ -99,17 +103,33 @@ namespace starcitizen.Buttons
 
         public override void KeyPressed(KeyPayload payload)
         {
-            if (currentState != DelayState.Pending || !settings.HoldToCancel)
-            {
-                return;
-            }
-
-            ResetToIdle();
+            // Intentionally empty:
+            // We use KeyReleased for "tap once to start, tap again to cancel".
         }
 
         public override void KeyReleased(KeyPayload payload)
         {
-            if (currentState != DelayState.Idle)
+            // Tap-to-cancel behavior:
+            // - If Idle: start pending
+            // - If Pending and HoldToCancel: cancel
+            // - Otherwise ignore
+
+            DelayState state;
+            lock (stateLock)
+            {
+                state = currentState;
+            }
+
+            if (state == DelayState.Pending)
+            {
+                if (settings.HoldToCancel)
+                {
+                    ResetToIdle();
+                }
+                return;
+            }
+
+            if (state != DelayState.Idle)
             {
                 return;
             }
@@ -142,7 +162,7 @@ namespace starcitizen.Buttons
             {
                 Tools.AutoPopulateSettings(settings, payload.Settings);
                 ClampSettings();
-                HandleFileNames();
+                LoadClickSound();
             }
 
             ResetToIdle();
@@ -151,22 +171,12 @@ namespace starcitizen.Buttons
         public override void Dispose()
         {
             ResetToIdle(false);
+
             Connection.OnPropertyInspectorDidAppear -= Connection_OnPropertyInspectorDidAppear;
             Connection.OnSendToPlugin -= Connection_OnSendToPlugin;
             Program.KeyBindingsLoaded -= OnKeyBindingsLoaded;
+
             base.Dispose();
-        }
-
-        public override void OnWillDisappear(StreamDeckEventPayload payload)
-        {
-            ResetToIdle();
-            base.OnWillDisappear(payload);
-        }
-
-        public override void OnDeviceDidDisconnect(DeviceDidDisconnectPayload payload)
-        {
-            ResetToIdle(false);
-            base.OnDeviceDidDisconnect(payload);
         }
 
         private void BeginPending()
@@ -176,17 +186,19 @@ namespace starcitizen.Buttons
                 currentState = DelayState.Pending;
             }
 
-            _ = Connection.SetStateAsync(0);
+            blinkState = 0u;
+            _ = Connection.SetStateAsync(0u);
+
             StartBlinking();
-            StartExecutionTimer();
+            StartPendingDelay();
         }
 
-        private void StartExecutionTimer()
+        private void StartPendingDelay()
         {
-            CancelExecutionTimer();
+            CancelPendingDelay();
 
-            executionCts = new CancellationTokenSource();
-            var token = executionCts.Token;
+            pendingCts = new CancellationTokenSource();
+            var token = pendingCts.Token;
 
             _ = Task.Run(async () =>
             {
@@ -204,13 +216,22 @@ namespace starcitizen.Buttons
                     return;
                 }
 
-                await ExecuteActionAsync();
+                await ExecuteNowAsync();
             });
         }
 
-        private async Task ExecuteActionAsync()
+        private async Task ExecuteNowAsync()
         {
             StopBlinking();
+
+            // If user tapped again and canceled right around the same time, bail out safely.
+            lock (stateLock)
+            {
+                if (currentState != DelayState.Pending)
+                {
+                    return;
+                }
+            }
 
             if (Program.dpReader == null)
             {
@@ -241,7 +262,7 @@ namespace starcitizen.Buttons
             }
             catch (Exception ex)
             {
-                Logger.Instance.LogMessage(TracingLevel.ERROR, $"Failed to send delayed keypress: {ex}");
+                Logger.Instance.LogMessage(TracingLevel.ERROR, $"Delayed keypress failed: {ex}");
                 ResetToIdle();
                 return;
             }
@@ -253,16 +274,16 @@ namespace starcitizen.Buttons
                 currentState = DelayState.Confirm;
             }
 
-            await Connection.SetStateAsync(1);
-            StartConfirmationTimer();
+            await Connection.SetStateAsync(1u);
+            StartConfirmTimer();
         }
 
-        private void StartConfirmationTimer()
+        private void StartConfirmTimer()
         {
-            CancelConfirmationTimer();
+            CancelConfirmTimer();
 
-            confirmationCts = new CancellationTokenSource();
-            var token = confirmationCts.Token;
+            confirmCts = new CancellationTokenSource();
+            var token = confirmCts.Token;
 
             _ = Task.Run(async () =>
             {
@@ -280,108 +301,179 @@ namespace starcitizen.Buttons
                     return;
                 }
 
-                lock (stateLock)
-                {
-                    currentState = DelayState.Idle;
-                }
-
-                await Connection.SetStateAsync(0);
+                ResetToIdle();
             });
         }
 
         private void StartBlinking()
         {
             StopBlinking();
-            blinkVisible = false;
+            blinkGuard = 0;
 
-            blinkTimer = new Timer(async _ => await ToggleBlinkAsync(), null, 0, settings.BlinkRateMs);
-        }
+            blinkTimer = new Timer(_ =>
+            {
+                if (Interlocked.Exchange(ref blinkGuard, 1) == 1)
+                {
+                    return;
+                }
 
-        private async Task ToggleBlinkAsync()
-        {
-            if (currentState != DelayState.Pending)
-            {
-                StopBlinking();
-                return;
-            }
+                _ = Task.Run(async () =>
+                {
+                    try
+                    {
+                        lock (stateLock)
+                        {
+                            if (currentState != DelayState.Pending)
+                            {
+                                return;
+                            }
+                        }
 
-            if (blinkVisible)
-            {
-                blinkVisible = false;
-                await Connection.SetImageAsync(TransparentPixel);
-            }
-            else
-            {
-                blinkVisible = true;
-                await Connection.SetStateAsync(0);
-            }
+                        blinkState = blinkState == 0u ? 1u : 0u;
+                        await Connection.SetStateAsync(blinkState);
+                    }
+                    catch
+                    {
+                        // ignore transient SD connection errors during blinking
+                    }
+                    finally
+                    {
+                        Interlocked.Exchange(ref blinkGuard, 0);
+                    }
+                });
+            }, null, 0, settings.BlinkRateMs);
         }
 
         private void StopBlinking()
         {
             blinkTimer?.Dispose();
             blinkTimer = null;
-            blinkVisible = true;
+            blinkGuard = 0;
 
-            _ = Connection.SetStateAsync(0);
-        }
-
-        private void CancelExecutionTimer()
-        {
-            if (executionCts != null)
+            lock (stateLock)
             {
-                executionCts.Cancel();
-                executionCts.Dispose();
-                executionCts = null;
+                if (currentState == DelayState.Pending)
+                {
+                    blinkState = 0u;
+                    _ = Connection.SetStateAsync(0u);
+                }
             }
         }
 
-        private void CancelConfirmationTimer()
+        private void ResetToIdle(bool resetState = true)
         {
-            if (confirmationCts != null)
-            {
-                confirmationCts.Cancel();
-                confirmationCts.Dispose();
-                confirmationCts = null;
-            }
-        }
+            CancelPendingDelay();
+            CancelConfirmTimer();
 
-        private void ResetToIdle(bool resetImage = true)
-        {
-            CancelExecutionTimer();
-            CancelConfirmationTimer();
-            StopBlinking();
+            blinkTimer?.Dispose();
+            blinkTimer = null;
+            blinkGuard = 0;
+            blinkState = 0u;
 
             lock (stateLock)
             {
                 currentState = DelayState.Idle;
             }
 
-            if (resetImage)
+            if (resetState)
             {
-                _ = Connection.SetStateAsync(0);
+                _ = Connection.SetStateAsync(0u);
             }
         }
 
-        private void HandleFileNames()
+        private void CancelPendingDelay()
+        {
+            if (pendingCts == null)
+            {
+                return;
+            }
+
+            try
+            {
+                pendingCts.Cancel();
+            }
+            catch
+            {
+                // ignore
+            }
+            finally
+            {
+                pendingCts.Dispose();
+                pendingCts = null;
+            }
+        }
+
+        private void CancelConfirmTimer()
+        {
+            if (confirmCts == null)
+            {
+                return;
+            }
+
+            try
+            {
+                confirmCts.Cancel();
+            }
+            catch
+            {
+                // ignore
+            }
+            finally
+            {
+                confirmCts.Dispose();
+                confirmCts = null;
+            }
+        }
+
+        private void ClampSettings()
+        {
+            settings.ExecutionDelayMs = Clamp(settings.ExecutionDelayMs, MinExecutionDelay, MaxExecutionDelay);
+            settings.ConfirmationDurationMs = Clamp(settings.ConfirmationDurationMs, MinConfirmationDuration, MaxConfirmationDuration);
+            settings.BlinkRateMs = Clamp(settings.BlinkRateMs, MinBlinkRate, MaxBlinkRate);
+        }
+
+        private static int Clamp(int value, int min, int max)
+        {
+            if (value < min)
+            {
+                return min;
+            }
+
+            if (value > max)
+            {
+                return max;
+            }
+
+            return value;
+        }
+
+        private void LoadClickSound()
         {
             clickSound = null;
 
-            if (!string.IsNullOrEmpty(settings.ClickSoundFilename) && File.Exists(settings.ClickSoundFilename))
+            if (string.IsNullOrWhiteSpace(settings.ClickSoundFilename))
             {
-                try
-                {
-                    clickSound = new CachedSound(settings.ClickSoundFilename);
-                }
-                catch (Exception ex)
-                {
-                    Logger.Instance.LogMessage(TracingLevel.ERROR, $"CachedSound: {settings.ClickSoundFilename} {ex}");
-                    clickSound = null;
-                    settings.ClickSoundFilename = null;
-                }
+                return;
             }
 
-            Connection.SetSettingsAsync(JObject.FromObject(settings)).Wait();
+            if (!File.Exists(settings.ClickSoundFilename))
+            {
+                settings.ClickSoundFilename = null;
+                Connection.SetSettingsAsync(JObject.FromObject(settings)).Wait();
+                return;
+            }
+
+            try
+            {
+                clickSound = new CachedSound(settings.ClickSoundFilename);
+            }
+            catch (Exception ex)
+            {
+                Logger.Instance.LogMessage(TracingLevel.ERROR, $"CachedSound: {settings.ClickSoundFilename} {ex}");
+                clickSound = null;
+                settings.ClickSoundFilename = null;
+                Connection.SetSettingsAsync(JObject.FromObject(settings)).Wait();
+            }
         }
 
         private void PlayClickSound()
@@ -401,28 +493,6 @@ namespace starcitizen.Buttons
             }
         }
 
-        private void ClampSettings()
-        {
-            settings.ExecutionDelayMs = Clamp(settings.ExecutionDelayMs, MinExecutionDelay, MaxExecutionDelay);
-            settings.ConfirmationDurationMs = Clamp(settings.ConfirmationDurationMs, MinConfirmationDuration, MaxConfirmationDuration);
-            settings.BlinkRateMs = Clamp(settings.BlinkRateMs, MinBlinkRate, MaxBlinkRate);
-        }
-
-        private int Clamp(int value, int min, int max)
-        {
-            if (value < min)
-            {
-                return min;
-            }
-
-            if (value > max)
-            {
-                return max;
-            }
-
-            return value;
-        }
-
         private void Connection_OnPropertyInspectorDidAppear(object sender, EventArgs e)
         {
             UpdatePropertyInspector();
@@ -433,15 +503,8 @@ namespace starcitizen.Buttons
             try
             {
                 var payload = e.ExtractPayload();
-
-                if (payload != null && payload.ContainsKey("jslog"))
-                {
-                    Logger.Instance.LogMessage(TracingLevel.INFO, $"[JS-PI] {payload["jslog"]}");
-                    return;
-                }
-
                 if (payload != null && payload.ContainsKey("property_inspector") &&
-                    payload["property_inspector"].ToString() == "propertyInspectorConnected")
+                    payload["property_inspector"]?.ToString() == "propertyInspectorConnected")
                 {
                     UpdatePropertyInspector();
                 }
@@ -467,7 +530,6 @@ namespace starcitizen.Buttons
                 }
 
                 var functionsData = BuildFunctionsData();
-
                 var payload = new JObject
                 {
                     ["functionsLoaded"] = true,
@@ -551,8 +613,8 @@ namespace starcitizen.Buttons
                             bindingType = "gamepad";
                         }
 
-                        string bindingDisplay = string.IsNullOrWhiteSpace(primaryBinding) ? "" : $" [{primaryBinding}]";
-                        string overruleIndicator = action.KeyboardOverRule || action.MouseOverRule ? " *" : "";
+                        var bindingDisplay = string.IsNullOrWhiteSpace(primaryBinding) ? "" : $" [{primaryBinding}]";
+                        var overruleIndicator = action.KeyboardOverRule || action.MouseOverRule ? " *" : "";
 
                         var optionObj = new JObject
                         {
@@ -569,31 +631,6 @@ namespace starcitizen.Buttons
                     {
                         result.Add(groupObj);
                     }
-                }
-
-                var unboundActions = Program.dpReader.GetUnboundActions();
-                if (unboundActions.Any())
-                {
-                    var unboundGroup = new JObject
-                    {
-                        ["label"] = "Unbound Actions",
-                        ["options"] = new JArray()
-                    };
-
-                    foreach (var action in unboundActions.OrderBy(x => x.Value.MapUILabel).ThenBy(x => x.Value.UILabel))
-                    {
-                        var optionObj = new JObject
-                        {
-                            ["value"] = action.Value.Name,
-                            ["text"] = $"{action.Value.UILabel} (unbound)",
-                            ["bindingType"] = "unbound",
-                            ["searchText"] = $"{action.Value.UILabel.ToLower()} {action.Value.UIDescription?.ToLower() ?? ""}"
-                        };
-
-                        ((JArray)unboundGroup["options"]).Add(optionObj);
-                    }
-
-                    result.Add(unboundGroup);
                 }
             }
             catch (Exception ex)
