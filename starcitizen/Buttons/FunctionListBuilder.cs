@@ -3,6 +3,7 @@ using System.Globalization;
 using System.Linq;
 using Newtonsoft.Json.Linq;
 using BarRaider.SdTools;
+using starcitizen.Core;
 
 namespace starcitizen.Buttons
 {
@@ -15,13 +16,14 @@ namespace starcitizen.Buttons
         public static JArray BuildFunctionsData(bool includeUnboundActions = true)
         {
             var result = new JArray();
+            var bindingService = KeyBindingService.Instance;
 
-            if (Program.dpReader == null)
+            if (bindingService.Reader == null)
             {
                 return result;
             }
 
-            var bindingsVersion = Program.KeyBindingsVersion;
+            var bindingsVersion = bindingService.Version;
 
             try
             {
@@ -45,7 +47,7 @@ namespace starcitizen.Buttons
                     culture = new CultureInfo("en-US");
                 }
 
-                var actions = Program.dpReader.GetAllActions().Values
+                var actions = bindingService.Reader.GetAllActions().Values
                     .Where(x =>
                         !string.IsNullOrWhiteSpace(x.Keyboard) ||
                         !string.IsNullOrWhiteSpace(x.Mouse) ||
@@ -116,7 +118,7 @@ namespace starcitizen.Buttons
 
                 if (includeUnboundActions)
                 {
-                    var unboundActions = Program.dpReader.GetUnboundActions();
+                    var unboundActions = bindingService.Reader.GetUnboundActions();
                     if (unboundActions.Any())
                     {
                         var unboundGroup = new JObject

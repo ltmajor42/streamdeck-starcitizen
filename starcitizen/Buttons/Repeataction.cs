@@ -6,6 +6,7 @@ using BarRaider.SdTools.Events;
 using BarRaider.SdTools.Wrappers;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using starcitizen.Core;
 
 namespace starcitizen.Buttons
 {
@@ -35,6 +36,7 @@ namespace starcitizen.Buttons
 
         private int currentRepeatRate = 100;
         private bool isRepeating;
+        private readonly KeyBindingService bindingService = KeyBindingService.Instance;
 
         public Repeataction(SDConnection connection, InitialPayload payload)
             : base(connection, payload)
@@ -53,14 +55,14 @@ namespace starcitizen.Buttons
 
             Connection.OnPropertyInspectorDidAppear += Connection_OnPropertyInspectorDidAppear;
             Connection.OnSendToPlugin += Connection_OnSendToPlugin;
-            Program.KeyBindingsLoaded += OnKeyBindingsLoaded;
+            bindingService.KeyBindingsLoaded += OnKeyBindingsLoaded;
 
             UpdatePropertyInspector();
         }
 
         public override void KeyPressed(KeyPayload payload)
         {
-            if (Program.dpReader == null)
+            if (bindingService.Reader == null)
             {
                 StreamDeckCommon.ForceStop = true;
                 return;
@@ -73,8 +75,7 @@ namespace starcitizen.Buttons
                 ParseRepeatRate(payload.Settings);
             }
 
-            var action = Program.dpReader.GetBinding(settings.Function);
-            if (action == null)
+            if (!bindingService.TryGetBinding(settings.Function, out var action))
             {
                 return;
             }
@@ -123,7 +124,7 @@ namespace starcitizen.Buttons
             repeatToken?.Cancel();
             Connection.OnPropertyInspectorDidAppear -= Connection_OnPropertyInspectorDidAppear;
             Connection.OnSendToPlugin -= Connection_OnSendToPlugin;
-            Program.KeyBindingsLoaded -= OnKeyBindingsLoaded;
+            bindingService.KeyBindingsLoaded -= OnKeyBindingsLoaded;
             base.Dispose();
         }
 
@@ -218,16 +219,12 @@ namespace starcitizen.Buttons
 
         private void UpdatePropertyInspector()
         {
-            if (Program.dpReader == null)
+            if (bindingService.Reader == null)
             {
                 return;
             }
 
-            Connection.SendToPropertyInspectorAsync(new JObject
-            {
-                ["functionsLoaded"] = true,
-                ["functions"] = FunctionListBuilder.BuildFunctionsData()
-            });
+            PropertyInspectorMessenger.SendFunctionsAsync(Connection);
         }
     }
 }

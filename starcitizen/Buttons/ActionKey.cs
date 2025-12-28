@@ -10,6 +10,7 @@ using BarRaider.SdTools.Wrappers;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using SCJMapper_V2.SC;
+using starcitizen.Core;
 
 // ReSharper disable StringLiteralTypo
 
@@ -43,6 +44,7 @@ namespace starcitizen.Buttons
 
         PluginSettings settings;
         private CachedSound _clickSound = null;
+        private readonly KeyBindingService bindingService = KeyBindingService.Instance;
 
         public ActionKey(SDConnection connection, InitialPayload payload) : base(connection, payload)
         {
@@ -67,7 +69,7 @@ namespace starcitizen.Buttons
             Connection.OnSendToPlugin += Connection_OnSendToPlugin;
 
             // Subscribe to key bindings loaded event
-            Program.KeyBindingsLoaded += OnKeyBindingsLoaded;
+            bindingService.KeyBindingsLoaded += OnKeyBindingsLoaded;
 
             // Send functions data immediately if PI is already open
             UpdatePropertyInspector();
@@ -76,7 +78,7 @@ namespace starcitizen.Buttons
 
         public override void KeyPressed(KeyPayload payload)
         {
-            if (Program.dpReader == null)
+            if (bindingService.Reader == null)
             {
                 StreamDeckCommon.ForceStop = true;
                 return;
@@ -84,8 +86,7 @@ namespace starcitizen.Buttons
 
             StreamDeckCommon.ForceStop = false;
 
-            var action = Program.dpReader.GetBinding(settings.Function);
-            if (action != null)
+            if (bindingService.TryGetBinding(settings.Function, out var action))
             {
                 Logger.Instance.LogMessage(TracingLevel.INFO, CommandTools.ConvertKeyString(action.Keyboard));
 
@@ -110,7 +111,7 @@ namespace starcitizen.Buttons
         public override void KeyReleased(KeyPayload payload)
 		{
 
-            if (Program.dpReader == null)
+            if (bindingService.Reader == null)
             {
                 StreamDeckCommon.ForceStop = true;
                 return;
@@ -118,8 +119,7 @@ namespace starcitizen.Buttons
 
             StreamDeckCommon.ForceStop = false;
 
-            var action = Program.dpReader.GetBinding(settings.Function);
-            if (action != null)
+            if (bindingService.TryGetBinding(settings.Function, out var action))
             {
                 Logger.Instance.LogMessage(TracingLevel.INFO, CommandTools.ConvertKeyString(action.Keyboard));
 
@@ -221,7 +221,7 @@ namespace starcitizen.Buttons
             // Unsubscribe from events
             Connection.OnPropertyInspectorDidAppear -= Connection_OnPropertyInspectorDidAppear;
             Connection.OnSendToPlugin -= Connection_OnSendToPlugin;
-            Program.KeyBindingsLoaded -= OnKeyBindingsLoaded;
+            bindingService.KeyBindingsLoaded -= OnKeyBindingsLoaded;
             base.Dispose();
         }
 
@@ -229,23 +229,13 @@ namespace starcitizen.Buttons
         {
             try
             {
-                if (Program.dpReader == null)
+                if (bindingService.Reader == null)
                 {
                     Logger.Instance.LogMessage(TracingLevel.WARN, "dpReader is null, cannot update Property Inspector");
                     return;
                 }
 
-                // Build the functions data as JSON
-                var functionsData = FunctionListBuilder.BuildFunctionsData();
-                
-                var payload = new JObject
-                {
-                    ["functionsLoaded"] = true,
-                    ["functions"] = functionsData
-                };
-
-                Connection.SendToPropertyInspectorAsync(payload);
-                Logger.Instance.LogMessage(TracingLevel.DEBUG, $"Sent {functionsData.Count} function groups to Property Inspector");
+                PropertyInspectorMessenger.SendFunctionsAsync(Connection);
             }
             catch (Exception ex)
             {

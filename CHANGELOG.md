@@ -5,6 +5,14 @@
 
 ## Changelog
 
+## v2.0.0
+
+### Major Refactor
+- Centralized key binding loading, caching, and file watching into `Core/KeyBindingService` with consistent logging via `PluginLog`.
+- Standardized Property Inspector updates through `Core/PropertyInspectorMessenger`, reducing per-action boilerplate.
+- Removed legacy template artifacts (`statictemplate.html`, `dialtemplate.html`, `macrotemplate.html`) to simplify packaging and future maintenance.
+- Updated documentation to credit the original plugin author (mhwlng), SCJMapper resources, and current maintainer (Ltmajor42), plus added guidance for adding new actions and troubleshooting.
+
 ## v1.2.0
 
 ### Fixes
