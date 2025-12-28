@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Globalization;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using BarRaider.SdTools;
@@ -228,94 +226,8 @@ namespace starcitizen.Buttons
             Connection.SendToPropertyInspectorAsync(new JObject
             {
                 ["functionsLoaded"] = true,
-                ["functions"] = BuildFunctionsData()
+                ["functions"] = FunctionListBuilder.BuildFunctionsData()
             });
-        }
-
-        private JArray BuildFunctionsData()
-        {
-            var result = new JArray();
-
-            try
-            {
-                var keyboard = KeyboardLayouts.GetThreadKeyboardLayout();
-                CultureInfo culture;
-
-                try
-                {
-                    culture = new CultureInfo(keyboard.KeyboardId);
-                }
-                catch
-                {
-                    culture = new CultureInfo("en-US");
-                }
-
-                var actions = Program.dpReader.GetAllActions().Values
-                    .Where(x =>
-                        !string.IsNullOrWhiteSpace(x.Keyboard) ||
-                        !string.IsNullOrWhiteSpace(x.Mouse) ||
-                        !string.IsNullOrWhiteSpace(x.Joystick) ||
-                        !string.IsNullOrWhiteSpace(x.Gamepad))
-                    .OrderBy(x => x.MapUILabel)
-                    .GroupBy(x => x.MapUILabel);
-
-                foreach (var group in actions)
-                {
-                    var groupObj = new JObject
-                    {
-                        ["label"] = group.Key,
-                        ["options"] = new JArray()
-                    };
-
-                    foreach (var action in group.OrderBy(x => x.MapUICategory).ThenBy(x => x.UILabel))
-                    {
-                        string primaryBinding = "";
-
-                        if (!string.IsNullOrWhiteSpace(action.Keyboard))
-                        {
-                            var keyString = CommandTools.ConvertKeyStringToLocale(action.Keyboard, culture.Name);
-                            primaryBinding = keyString
-                                .Replace("Dik", "")
-                                .Replace("}{", "+")
-                                .Replace("{", "")
-                                .Replace("}", "");
-                        }
-                        else if (!string.IsNullOrWhiteSpace(action.Mouse))
-                        {
-                            primaryBinding = action.Mouse;
-                        }
-                        else if (!string.IsNullOrWhiteSpace(action.Joystick))
-                        {
-                            primaryBinding = action.Joystick;
-                        }
-                        else if (!string.IsNullOrWhiteSpace(action.Gamepad))
-                        {
-                            primaryBinding = action.Gamepad;
-                        }
-
-                        ((JArray)groupObj["options"]).Add(new JObject
-                        {
-                            ["value"] = action.Name,
-                            ["text"] = $"{action.UILabel}{(string.IsNullOrWhiteSpace(primaryBinding) ? "" : $" [{primaryBinding}]")}",
-                            ["searchText"] =
-                                $"{action.UILabel.ToLower()} " +
-                                $"{(action.UIDescription ?? "").ToLower()} " +
-                                $"{primaryBinding.ToLower()}"
-                        });
-                    }
-
-                    if (((JArray)groupObj["options"]).Count > 0)
-                    {
-                        result.Add(groupObj);
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                Logger.Instance.LogMessage(TracingLevel.ERROR, ex.ToString());
-            }
-
-            return result;
         }
     }
 }

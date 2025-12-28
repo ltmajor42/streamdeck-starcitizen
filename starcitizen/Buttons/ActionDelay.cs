@@ -1,9 +1,7 @@
 ﻿// File: Buttons/ActionDelay.cs
 
 using System;
-using System.Globalization;
 using System.IO;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using BarRaider.SdTools;
@@ -529,7 +527,7 @@ namespace starcitizen.Buttons
                     return;
                 }
 
-                var functionsData = BuildFunctionsData();
+                var functionsData = FunctionListBuilder.BuildFunctionsData();
                 var payload = new JObject
                 {
                     ["functionsLoaded"] = true,
@@ -544,101 +542,6 @@ namespace starcitizen.Buttons
             }
         }
 
-        private JArray BuildFunctionsData()
-        {
-            var result = new JArray();
-
-            try
-            {
-                var keyboard = KeyboardLayouts.GetThreadKeyboardLayout();
-                CultureInfo culture;
-
-                try
-                {
-                    culture = new CultureInfo(keyboard.KeyboardId);
-                }
-                catch
-                {
-                    culture = new CultureInfo("en-US");
-                }
-
-                var allActions = Program.dpReader.GetAllActions();
-                var actionsWithBindings = allActions.Values
-                    .Where(x => !string.IsNullOrWhiteSpace(x.Keyboard) ||
-                                !string.IsNullOrWhiteSpace(x.Mouse) ||
-                                !string.IsNullOrWhiteSpace(x.Joystick) ||
-                                !string.IsNullOrWhiteSpace(x.Gamepad))
-                    .ToList();
-
-                var groups = actionsWithBindings
-                    .OrderBy(x => x.MapUILabel)
-                    .GroupBy(x => x.MapUILabel);
-
-                foreach (var group in groups)
-                {
-                    var groupObj = new JObject
-                    {
-                        ["label"] = group.Key,
-                        ["options"] = new JArray()
-                    };
-
-                    var options = group
-                        .OrderBy(x => x.MapUICategory)
-                        .ThenBy(x => x.UILabel);
-
-                    foreach (var action in options)
-                    {
-                        string primaryBinding = "";
-                        string bindingType = "";
-
-                        if (!string.IsNullOrWhiteSpace(action.Keyboard))
-                        {
-                            var keyString = CommandTools.ConvertKeyStringToLocale(action.Keyboard, culture.Name);
-                            primaryBinding = keyString.Replace("Dik", "").Replace("}{", "+").Replace("}", "").Replace("{", "");
-                            bindingType = "keyboard";
-                        }
-                        else if (!string.IsNullOrWhiteSpace(action.Mouse))
-                        {
-                            primaryBinding = action.Mouse;
-                            bindingType = "mouse";
-                        }
-                        else if (!string.IsNullOrWhiteSpace(action.Joystick))
-                        {
-                            primaryBinding = action.Joystick;
-                            bindingType = "joystick";
-                        }
-                        else if (!string.IsNullOrWhiteSpace(action.Gamepad))
-                        {
-                            primaryBinding = action.Gamepad;
-                            bindingType = "gamepad";
-                        }
-
-                        var bindingDisplay = string.IsNullOrWhiteSpace(primaryBinding) ? "" : $" [{primaryBinding}]";
-                        var overruleIndicator = action.KeyboardOverRule || action.MouseOverRule ? " *" : "";
-
-                        var optionObj = new JObject
-                        {
-                            ["value"] = action.Name,
-                            ["text"] = $"{action.UILabel}{bindingDisplay}{overruleIndicator}",
-                            ["bindingType"] = bindingType,
-                            ["searchText"] = $"{action.UILabel.ToLower()} {action.UIDescription?.ToLower() ?? ""} {primaryBinding.ToLower()}"
-                        };
-
-                        ((JArray)groupObj["options"]).Add(optionObj);
-                    }
-
-                    if (((JArray)groupObj["options"]).Count > 0)
-                    {
-                        result.Add(groupObj);
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                Logger.Instance.LogMessage(TracingLevel.ERROR, $"BuildFunctionsData error: {ex.Message}");
-            }
-
-            return result;
-        }
+        private JArray BuildFunctionsData() => FunctionListBuilder.BuildFunctionsData();
     }
 }
