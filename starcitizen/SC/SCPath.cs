@@ -81,11 +81,11 @@ namespace SCJMapper_V2.SC
             @"E:\SteamLibrary\steamapps\common\Star Citizen",
         };
 
-        private static readonly object PathCacheLock = new object();
+        private static readonly object PathCacheLock = new();
         private static string cachedBasePath;
         private static bool cachedBasePathSet;
 
-        private static readonly object ClientPathCacheLock = new object();
+        private static readonly object ClientPathCacheLock = new();
         private static string cachedClientPath;
         private static bool cachedClientPathSet;
         private static bool cachedClientPathUsePtu;
