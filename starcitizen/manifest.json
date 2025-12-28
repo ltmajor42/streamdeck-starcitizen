@@ -3,6 +3,7 @@
     {
       "Icon": "Images/ActionKey",
       "Name": "Action Key",
+      "Controllers": ["Keypad"],
       "States": [
         {
           "Image": "Images/ActionKey",
@@ -16,12 +17,12 @@
       "PropertyInspectorPath": "PropertyInspector/StarCitizen/ActionKey.html"
     },
     {
-      "Icon": "Images/pluginIcon",
+      "Icon": "Images/pluginDialIcon",
       "Name": "Dial Button",
       "Controllers": ["Encoder"],
       "States": [
         {
-          "Image": "Images/pluginIcon"
+          "Image": "Images/pluginDialIcon"
         }
       ],
       "Encoder": {
@@ -36,6 +37,7 @@
     {
       "Icon": "Images/Momentary0",
       "Name": "Momentary Button",
+      "Controllers": ["Keypad"],
       "States": [
         {
           "Image": "Images/Momentary0",
@@ -56,6 +58,7 @@
     {
       "Icon": "Images/Dualaction0",
       "Name": "Dual Action Button",
+      "Controllers": ["Keypad"],
       "States": [
         {
           "Image": "Images/Dualaction0",
@@ -76,6 +79,7 @@
     {
       "Icon": "Images/Repeataction0",
       "Name": "Repeat Action",
+      "Controllers": ["Keypad"],
       "States": [
         {
           "Image": "Images/Repeataction0",
@@ -96,6 +100,7 @@
     {
       "Icon": "Images/ActionDelay0",
       "Name": "Action Delay",
+      "Controllers": ["Keypad"],
       "States": [
         {
           "Image": "Images/ActionDelay0",
@@ -116,6 +121,7 @@
     {
       "Icon": "Images/Cosmetic",
       "Name": "Cosmetic Key",
+      "Controllers": ["Keypad"],
       "States": [
         {
           "Image": "Images/Cosmetic",
@@ -130,6 +136,7 @@
     {
       "Icon": "Images/Statememory0",
       "Name": "State Memory (Soft Sync Toggle)",
+      "Controllers": ["Keypad"],
       "States": [
         {
           "Image": "Images/Statememory0",
@@ -153,7 +160,7 @@
   "Name": "Star Citizen",
   "Icon": "Images/pluginIcon",
   "URL": "https://github.com/mhwlng/streamdeck-starcitizen",
-  "Version": "1.1.9",
+  "Version": "1.2.0",
   "CodePath": "com.mhwlng.starcitizen",
   "Category": "Star Citizen",
   "CategoryIcon": "Images/categoryIcon",

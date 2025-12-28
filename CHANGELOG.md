@@ -5,6 +5,11 @@
 
 ## Changelog
 
+## v1.2.0
+
+### Fixes
+- Dial action now explicitly targets the Stream Deck+ encoders and uses a dedicated dial icon, so it shows up correctly in the Stream Deck action list.
+
 ## v1.1.8
 
 ### New Features

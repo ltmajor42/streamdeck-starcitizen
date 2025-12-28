@@ -213,7 +213,7 @@ You can then set up different images for each toggle state.
 The disadvantage is: that if you would press e.g. the gear up/down toggle button while the ship is still on the ground/powered off, 
 then the button image would be out of sync.
 
-The plugin also has a Dial button for use with the 4 dials on the Streamdeck+ model.
+The plugin also has a Dial button for use with the 4 dials on the Streamdeck+ model. You’ll find it under the **Dials** section of the Stream Deck+ action list (look for the Star Citizen category with the dial icon).
 
 There are 5 bindings (They must be keyboard bindings, you can't bind the mouse wheel!) :
 
