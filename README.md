@@ -2,8 +2,8 @@
 
 **Elgato Stream Deck button plugin for Star Citizen**
 
-> 🔗 **This is an updated fork of [mhwlng/streamdeck-starcitizen](https://github.com/mhwlng/streamdeck-starcitizen)**  
-> The original project is archived. This fork adds improved auto-detection, search functionality, and bug fixes.
+> 🔗 **Updated fork of [mhwlng/streamdeck-starcitizen](https://github.com/mhwlng/streamdeck-starcitizen)**  
+> Maintained by **Ltmajor42**. Original code by **mhwlng** with in-game binding discovery provided by **SCJMapper** assets. This fork adds auto-detection, search, refactors, and stability fixes.
 
 ## What's New in This Fork
 
@@ -11,6 +11,12 @@
 - **Search Functionality** - Quickly find keybindings with the new search box in the Property Inspector.
 - **Simplified Configuration** - Only need to set `SCBasePath` if auto-detection fails (instead of SCData_p4k and SCClientProfilePath).
 - **Bug Fixes & Improvements** - Various fixes to improve stability and usability.
+
+## Ownership, Credits, and Thanks
+
+- **Maintainer/Author:** Ltmajor42  
+- **Upstream inspiration:** [mhwlng/streamdeck-starcitizen](https://github.com/mhwlng/streamdeck-starcitizen)  
+- **Binding loader:** [SCJMapper resources](https://github.com/SCToolsfactory/SCJMapper-V2) power the Star Citizen keybind parsing.
 
 ## V2 Full Release
 
@@ -32,6 +38,27 @@ The plugin logs useful startup and detection details in:
 2. **Cleaner structure** - Easier to maintain and evolve long-term
 3. **Improved Property Inspector experience** - Faster function selection and more consistent UI
 4. **More consistent action behavior** - Actions now follow clearer rules across buttons
+
+### Architecture highlights (v2)
+
+- **Centralized key binding service** – `Core/KeyBindingService` loads bindings, watches `actionmaps.xml`, and caches versioned results so actions can refresh safely.
+- **Shared Property Inspector messaging** – `Core/PropertyInspectorMessenger` sends the current function list to any action without copy/paste code.
+- **Single logging entry point** – `Core/PluginLog` wraps `BarRaider.SdTools.Logger` to keep troubleshooting messages consistent in `pluginlog.log`.
+- **Lean surface** – Legacy template generators have been removed; Property Inspectors live directly under `PropertyInspector/StarCitizen/`.
+
+### Adding a new action (quick guide)
+
+1. **Create the action class** – Derive from `StarCitizenKeypadBase` or `StarCitizenDialBase` and keep a private `KeyBindingService bindingService = KeyBindingService.Instance;`.
+2. **Wire key binding lookups** – Use `bindingService.TryGetBinding(settings.Function, out var action)` before sending any keypress.
+3. **Send PI data** – Subscribe to `bindingService.KeyBindingsLoaded`, `Connection.OnPropertyInspectorDidAppear`, and `OnSendToPlugin`, then call `PropertyInspectorMessenger.SendFunctionsAsync(Connection)` to populate dropdowns.
+4. **Log consistently** – Use `PluginLog.Info/Warn/Error/Fatal` for any runtime issues; they land in `pluginlog.log` for easy troubleshooting.
+5. **Keep settings minimal** – Prefer simple `PluginSettings` classes with `Tools.AutoPopulateSettings` to minimize boilerplate.
+
+### Troubleshooting
+
+- Live log path: `%appdata%\\Elgato\\StreamDeck\\Plugins\\com.mhwlng.starcitizen.sdPlugin\\pluginlog.log`
+- Ensure the **RSI Launcher** is installed and has launched at least once so bindings can be read.
+- If functions are missing, close and reopen the Stream Deck app to trigger a fresh `actionmaps.xml` load, or delete stale profiles inside `%appdata%\\Elgato\\StreamDeck\\Plugins\\...`.
 
 ---
 

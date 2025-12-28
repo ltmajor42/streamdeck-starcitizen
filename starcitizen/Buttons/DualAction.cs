@@ -5,6 +5,7 @@ using BarRaider.SdTools.Events;
 using BarRaider.SdTools.Wrappers;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using starcitizen.Core;
 
 namespace starcitizen.Buttons
 {
@@ -35,6 +36,7 @@ namespace starcitizen.Buttons
 
         private PluginSettings settings;
         private CachedSound _clickSound;
+        private readonly KeyBindingService bindingService = KeyBindingService.Instance;
 
         public DualAction(SDConnection connection, InitialPayload payload)
             : base(connection, payload)
@@ -52,14 +54,14 @@ namespace starcitizen.Buttons
 
             Connection.OnPropertyInspectorDidAppear += Connection_OnPropertyInspectorDidAppear;
             Connection.OnSendToPlugin += Connection_OnSendToPlugin;
-            Program.KeyBindingsLoaded += OnKeyBindingsLoaded;
+            bindingService.KeyBindingsLoaded += OnKeyBindingsLoaded;
 
             UpdatePropertyInspector();
         }
 
         public override void KeyPressed(KeyPayload payload)
         {
-            if (Program.dpReader == null)
+            if (bindingService.Reader == null)
             {
                 StreamDeckCommon.ForceStop = true;
                 return;
@@ -74,7 +76,7 @@ namespace starcitizen.Buttons
 
         public override void KeyReleased(KeyPayload payload)
         {
-            if (Program.dpReader == null)
+            if (bindingService.Reader == null)
             {
                 StreamDeckCommon.ForceStop = true;
                 return;
@@ -88,8 +90,7 @@ namespace starcitizen.Buttons
 
         private void SendDownAction()
         {
-            var action = Program.dpReader.GetBinding(settings.DownFunction);
-            if (action == null)
+            if (!bindingService.TryGetBinding(settings.DownFunction, out var action))
             {
                 return;
             }
@@ -99,15 +100,12 @@ namespace starcitizen.Buttons
 
         private void SendUpAction()
         {
-            var downAction = Program.dpReader.GetBinding(settings.DownFunction);
-            if (downAction != null)
+            if (bindingService.TryGetBinding(settings.DownFunction, out var downAction))
             {
                 StreamDeckCommon.SendKeypressUp(CommandTools.ConvertKeyString(downAction.Keyboard));
             }
 
-            var upAction = Program.dpReader.GetBinding(settings.UpFunction);
-
-            if (upAction == null || settings.UpFunction == settings.DownFunction)
+            if (!bindingService.TryGetBinding(settings.UpFunction, out var upAction) || settings.UpFunction == settings.DownFunction)
             {
                 return;
             }
@@ -143,16 +141,12 @@ namespace starcitizen.Buttons
 
         private void UpdatePropertyInspector()
         {
-            if (Program.dpReader == null)
+            if (bindingService.Reader == null)
             {
                 return;
             }
 
-            Connection.SendToPropertyInspectorAsync(new JObject
-            {
-                ["functionsLoaded"] = true,
-                ["functions"] = FunctionListBuilder.BuildFunctionsData()
-            });
+            PropertyInspectorMessenger.SendFunctionsAsync(Connection);
         }
 
         private void LoadClickSound()
@@ -194,7 +188,7 @@ namespace starcitizen.Buttons
         {
             Connection.OnPropertyInspectorDidAppear -= Connection_OnPropertyInspectorDidAppear;
             Connection.OnSendToPlugin -= Connection_OnSendToPlugin;
-            Program.KeyBindingsLoaded -= OnKeyBindingsLoaded;
+            bindingService.KeyBindingsLoaded -= OnKeyBindingsLoaded;
             base.Dispose();
         }
     }

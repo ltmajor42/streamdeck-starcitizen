@@ -7,6 +7,7 @@ using BarRaider.SdTools.Events;
 using BarRaider.SdTools.Wrappers;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using starcitizen.Core;
 
 namespace starcitizen.Buttons
 {
@@ -35,6 +36,7 @@ namespace starcitizen.Buttons
         private CachedSound _clickSound;
         private CancellationTokenSource resetToken;
         private int visualSequence;
+        private readonly KeyBindingService bindingService = KeyBindingService.Instance;
 
         // 🔑 runtime-authoritative delay (updated via ReceivedSettings)
         private int currentDelay = 1000;
@@ -52,7 +54,7 @@ namespace starcitizen.Buttons
 
             Connection.OnPropertyInspectorDidAppear += Connection_OnPropertyInspectorDidAppear;
             Connection.OnSendToPlugin += Connection_OnSendToPlugin;
-            Program.KeyBindingsLoaded += OnKeyBindingsLoaded;
+            bindingService.KeyBindingsLoaded += OnKeyBindingsLoaded;
 
             LoadClickSound();
             UpdatePropertyInspector();
@@ -62,10 +64,9 @@ namespace starcitizen.Buttons
 
         public override void KeyPressed(KeyPayload payload)
         {
-            if (Program.dpReader == null) return;
+            if (bindingService.Reader == null) return;
 
-            var action = Program.dpReader.GetBinding(settings.Function);
-            if (action != null)
+            if (bindingService.TryGetBinding(settings.Function, out var action))
             {
                 var keyString = CommandTools.ConvertKeyString(action.Keyboard);
 
@@ -84,10 +85,9 @@ namespace starcitizen.Buttons
 
         public override void KeyReleased(KeyPayload payload)
         {
-            if (Program.dpReader == null) return;
+            if (bindingService.Reader == null) return;
 
-            var action = Program.dpReader.GetBinding(settings.Function);
-            if (action != null)
+            if (bindingService.TryGetBinding(settings.Function, out var action))
             {
                 var keyString = CommandTools.ConvertKeyString(action.Keyboard);
 
@@ -228,13 +228,9 @@ namespace starcitizen.Buttons
 
         private void UpdatePropertyInspector()
         {
-            if (Program.dpReader == null) return;
+            if (bindingService.Reader == null) return;
 
-            Connection.SendToPropertyInspectorAsync(new JObject
-            {
-                ["functionsLoaded"] = true,
-                ["functions"] = FunctionListBuilder.BuildFunctionsData()
-            });
+            PropertyInspectorMessenger.SendFunctionsAsync(Connection);
         }
 
         public override void Dispose()
@@ -242,7 +238,7 @@ namespace starcitizen.Buttons
             resetToken?.Cancel();
             Connection.OnPropertyInspectorDidAppear -= Connection_OnPropertyInspectorDidAppear;
             Connection.OnSendToPlugin -= Connection_OnSendToPlugin;
-            Program.KeyBindingsLoaded -= OnKeyBindingsLoaded;
+            bindingService.KeyBindingsLoaded -= OnKeyBindingsLoaded;
             base.Dispose();
         }
     }

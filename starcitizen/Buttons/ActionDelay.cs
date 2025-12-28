@@ -9,6 +9,7 @@ using BarRaider.SdTools.Events;
 using BarRaider.SdTools.Wrappers;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using starcitizen.Core;
 
 namespace starcitizen.Buttons
 {
@@ -67,6 +68,7 @@ namespace starcitizen.Buttons
 
         private PluginSettings settings;
         private CachedSound clickSound;
+        private readonly KeyBindingService bindingService = KeyBindingService.Instance;
 
         private DelayState currentState = DelayState.Idle;
 
@@ -94,7 +96,7 @@ namespace starcitizen.Buttons
 
             Connection.OnPropertyInspectorDidAppear += Connection_OnPropertyInspectorDidAppear;
             Connection.OnSendToPlugin += Connection_OnSendToPlugin;
-            Program.KeyBindingsLoaded += OnKeyBindingsLoaded;
+            bindingService.KeyBindingsLoaded += OnKeyBindingsLoaded;
 
             UpdatePropertyInspector();
         }
@@ -132,7 +134,7 @@ namespace starcitizen.Buttons
                 return;
             }
 
-            if (Program.dpReader == null)
+            if (bindingService.Reader == null)
             {
                 StreamDeckCommon.ForceStop = true;
                 return;
@@ -172,7 +174,7 @@ namespace starcitizen.Buttons
 
             Connection.OnPropertyInspectorDidAppear -= Connection_OnPropertyInspectorDidAppear;
             Connection.OnSendToPlugin -= Connection_OnSendToPlugin;
-            Program.KeyBindingsLoaded -= OnKeyBindingsLoaded;
+            bindingService.KeyBindingsLoaded -= OnKeyBindingsLoaded;
 
             base.Dispose();
         }
@@ -231,7 +233,7 @@ namespace starcitizen.Buttons
                 }
             }
 
-            if (Program.dpReader == null)
+            if (bindingService.Reader == null)
             {
                 StreamDeckCommon.ForceStop = true;
                 ResetToIdle();
@@ -240,8 +242,7 @@ namespace starcitizen.Buttons
 
             StreamDeckCommon.ForceStop = false;
 
-            var action = Program.dpReader.GetBinding(settings.Function);
-            if (action == null || string.IsNullOrWhiteSpace(action.Keyboard))
+            if (!bindingService.TryGetBinding(settings.Function, out var action) || string.IsNullOrWhiteSpace(action.Keyboard))
             {
                 ResetToIdle();
                 return;
@@ -522,26 +523,17 @@ namespace starcitizen.Buttons
         {
             try
             {
-                if (Program.dpReader == null)
+                if (bindingService.Reader == null)
                 {
                     return;
                 }
 
-                var functionsData = FunctionListBuilder.BuildFunctionsData();
-                var payload = new JObject
-                {
-                    ["functionsLoaded"] = true,
-                    ["functions"] = functionsData
-                };
-
-                Connection.SendToPropertyInspectorAsync(payload);
+                PropertyInspectorMessenger.SendFunctionsAsync(Connection);
             }
             catch (Exception ex)
             {
                 Logger.Instance.LogMessage(TracingLevel.ERROR, $"Failed to update PI: {ex.Message}");
             }
         }
-
-        private JArray BuildFunctionsData() => FunctionListBuilder.BuildFunctionsData();
     }
 }

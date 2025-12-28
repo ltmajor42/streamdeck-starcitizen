@@ -191,6 +191,10 @@
     <Compile Include="Buttons\StreamDeckEventArgsExtensions.cs" />
     <Compile Include="Buttons\StarCitizenKeypadBase.cs" />
     <Compile Include="Buttons\ActionKey.cs" />
+    <Compile Include="Core\KeyBindingService.cs" />
+    <Compile Include="Core\KeyBindingWatcher.cs" />
+    <Compile Include="Core\PluginLog.cs" />
+    <Compile Include="Core\PropertyInspectorMessenger.cs" />
     <Compile Include="CommandTools.cs" />
     <Compile Include="CryXMLlib\Conversions.cs" />
     <Compile Include="CryXMLlib\CryIXml.cs" />
@@ -377,9 +381,6 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <Content Include="Sounds\readme.txt">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="statictemplate.html">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
   </ItemGroup>

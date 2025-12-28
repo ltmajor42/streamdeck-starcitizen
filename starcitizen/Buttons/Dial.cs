@@ -10,6 +10,7 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System.Threading;
 using System.Diagnostics;
+using starcitizen.Core;
 
 // ReSharper disable StringLiteralTypo
 
@@ -67,6 +68,7 @@ namespace starcitizen.Buttons
 
         private Thread dialWatcherThread = null;
         private CancellationTokenSource cancellationTokenSource;
+        private readonly KeyBindingService bindingService = KeyBindingService.Instance;
 
         public Dial(SDConnection connection, InitialPayload payload) : base(connection, payload)
         {
@@ -92,7 +94,7 @@ namespace starcitizen.Buttons
             {
                 while (true)
                 {
-                    if (Program.dpReader == null)
+                    if (bindingService.Reader == null)
                     {
                         StreamDeckCommon.ForceStop = true;
                         return;
@@ -129,7 +131,7 @@ namespace starcitizen.Buttons
 
             Connection.OnPropertyInspectorDidAppear += Connection_OnPropertyInspectorDidAppear;
             Connection.OnSendToPlugin += Connection_OnSendToPlugin;
-            Program.KeyBindingsLoaded += OnKeyBindingsLoaded;
+            bindingService.KeyBindingsLoaded += OnKeyBindingsLoaded;
 
             UpdatePropertyInspector();
         }
@@ -144,7 +146,7 @@ namespace starcitizen.Buttons
 
             Connection.OnPropertyInspectorDidAppear -= Connection_OnPropertyInspectorDidAppear;
             Connection.OnSendToPlugin -= Connection_OnSendToPlugin;
-            Program.KeyBindingsLoaded -= OnKeyBindingsLoaded;
+            bindingService.KeyBindingsLoaded -= OnKeyBindingsLoaded;
 
             base.Dispose();
 
@@ -154,7 +156,7 @@ namespace starcitizen.Buttons
 
         public override void TouchPress(TouchpadPressPayload payload)
         {
-            if (Program.dpReader == null)
+            if (bindingService.Reader == null)
             {
                 StreamDeckCommon.ForceStop = true;
                 return;
@@ -166,8 +168,7 @@ namespace starcitizen.Buttons
             {
                 //Logger.Instance.LogMessage(TracingLevel.INFO, $"TouchPress: LongPress");
 
-                var action = Program.dpReader.GetBinding(settings.FunctionTouchLongPress);
-                if (action != null)
+                if (bindingService.TryGetBinding(settings.FunctionTouchLongPress, out var action))
                 {
                     Logger.Instance.LogMessage(TracingLevel.INFO, CommandTools.ConvertKeyString(action.Keyboard));
 
@@ -178,8 +179,7 @@ namespace starcitizen.Buttons
             {
                 //Logger.Instance.LogMessage(TracingLevel.INFO, $"TouchPress: Press");
 
-                var action = Program.dpReader.GetBinding(settings.FunctionTouchPress);
-                if (action != null)
+                if (bindingService.TryGetBinding(settings.FunctionTouchPress, out var action))
                 {
                     Logger.Instance.LogMessage(TracingLevel.INFO, CommandTools.ConvertKeyString(action.Keyboard));
 
@@ -189,7 +189,7 @@ namespace starcitizen.Buttons
         }
         public override void DialDown(DialPayload payload)
         {
-            if (Program.dpReader == null)
+            if (bindingService.Reader == null)
             {
                 StreamDeckCommon.ForceStop = true;
                 return;
@@ -198,8 +198,7 @@ namespace starcitizen.Buttons
             StreamDeckCommon.ForceStop = false;
 
             //Logger.Instance.LogMessage(TracingLevel.INFO, $"Dial Down");
-            var action = Program.dpReader.GetBinding(settings.FunctionPress);
-            if (action != null)
+            if (bindingService.TryGetBinding(settings.FunctionPress, out var action))
             {
                 Logger.Instance.LogMessage(TracingLevel.INFO, CommandTools.ConvertKeyString(action.Keyboard));
 
@@ -210,7 +209,7 @@ namespace starcitizen.Buttons
         public override void DialUp(DialPayload payload)
         {
 
-            if (Program.dpReader == null)
+            if (bindingService.Reader == null)
             {
                 StreamDeckCommon.ForceStop = true;
                 return;
@@ -219,8 +218,7 @@ namespace starcitizen.Buttons
             StreamDeckCommon.ForceStop = false;
 
             //Logger.Instance.LogMessage(TracingLevel.INFO, $"Dial Up");
-            var action = Program.dpReader.GetBinding(settings.FunctionPress);
-            if (action != null)
+            if (bindingService.TryGetBinding(settings.FunctionPress, out var action))
             {
                 Logger.Instance.LogMessage(TracingLevel.INFO, CommandTools.ConvertKeyString(action.Keyboard));
 
@@ -232,8 +230,7 @@ namespace starcitizen.Buttons
         {
             if (cwIsDown)
             {
-                var action = Program.dpReader.GetBinding(settings.FunctionCw);
-                if (action != null)
+                if (bindingService.TryGetBinding(settings.FunctionCw, out var action))
                 {
                     Logger.Instance.LogMessage(TracingLevel.INFO, CommandTools.ConvertKeyString(action.Keyboard));
 
@@ -249,8 +246,7 @@ namespace starcitizen.Buttons
         {
             if (ccwIsDown)
             {
-                var action = Program.dpReader.GetBinding(settings.FunctionCcw);
-                if (action != null)
+                if (bindingService.TryGetBinding(settings.FunctionCcw, out var action))
                 {
                     Logger.Instance.LogMessage(TracingLevel.INFO, CommandTools.ConvertKeyString(action.Keyboard));
 
@@ -264,7 +260,7 @@ namespace starcitizen.Buttons
         public override void DialRotate(DialRotatePayload payload)
         {
 
-            if (Program.dpReader == null)
+            if (bindingService.Reader == null)
             {
                 StreamDeckCommon.ForceStop = true;
                 return;
@@ -282,8 +278,7 @@ namespace starcitizen.Buttons
 
                 if (!cwIsDown)
                 {
-                    var action = Program.dpReader.GetBinding(settings.FunctionCw);
-                    if (action != null)
+                    if (bindingService.TryGetBinding(settings.FunctionCw, out var action))
                     {
                         Logger.Instance.LogMessage(TracingLevel.INFO,
                             CommandTools.ConvertKeyString(action.Keyboard));
@@ -302,8 +297,7 @@ namespace starcitizen.Buttons
 
                 if (!ccwIsDown)
                 {
-                    var action = Program.dpReader.GetBinding(settings.FunctionCcw);
-                    if (action != null)
+                    if (bindingService.TryGetBinding(settings.FunctionCcw, out var action))
                     {
                    
                         Logger.Instance.LogMessage(TracingLevel.INFO,
@@ -367,18 +361,12 @@ namespace starcitizen.Buttons
 
         private void UpdatePropertyInspector()
         {
-            if (Program.dpReader == null)
+            if (bindingService.Reader == null)
             {
                 return;
             }
 
-            Connection.SendToPropertyInspectorAsync(new JObject
-            {
-                ["functionsLoaded"] = true,
-                ["functions"] = FunctionListBuilder.BuildFunctionsData()
-            });
+            PropertyInspectorMessenger.SendFunctionsAsync(Connection);
         }
-
-        private JArray BuildFunctionsData() => FunctionListBuilder.BuildFunctionsData();
     }
 }

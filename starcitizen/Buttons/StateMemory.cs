@@ -9,6 +9,7 @@ using BarRaider.SdTools.Wrappers;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using SCJMapper_V2.SC;
+using starcitizen.Core;
 
 namespace starcitizen.Buttons
 {
@@ -59,6 +60,7 @@ namespace starcitizen.Buttons
         private DateTime? pressStartUtc;
 
         private int inFlight;
+        private readonly KeyBindingService bindingService = KeyBindingService.Instance;
 
         public StateMemory(SDConnection connection, InitialPayload payload) : base(connection, payload)
         {
@@ -74,7 +76,7 @@ namespace starcitizen.Buttons
 
             Connection.OnPropertyInspectorDidAppear += Connection_OnPropertyInspectorDidAppear;
             Connection.OnSendToPlugin += Connection_OnSendToPlugin;
-            Program.KeyBindingsLoaded += OnKeyBindingsLoaded;
+            bindingService.KeyBindingsLoaded += OnKeyBindingsLoaded;
 
             ApplyVisualState();
             UpdatePropertyInspector();
@@ -96,7 +98,7 @@ namespace starcitizen.Buttons
 
             try
             {
-                if (Program.dpReader == null)
+                if (bindingService.Reader == null)
                 {
                     StreamDeckCommon.ForceStop = true;
                     return;
@@ -149,7 +151,7 @@ namespace starcitizen.Buttons
         {
             Connection.OnPropertyInspectorDidAppear -= Connection_OnPropertyInspectorDidAppear;
             Connection.OnSendToPlugin -= Connection_OnSendToPlugin;
-            Program.KeyBindingsLoaded -= OnKeyBindingsLoaded;
+            bindingService.KeyBindingsLoaded -= OnKeyBindingsLoaded;
             base.Dispose();
         }
 
@@ -185,10 +187,10 @@ namespace starcitizen.Buttons
         {
             try
             {
-                if (Program.dpReader == null) return;
+                if (bindingService.Reader == null) return;
                 if (string.IsNullOrWhiteSpace(settings.Function)) return;
 
-                var binding = Program.dpReader.GetBinding(settings.Function);
+                var binding = bindingService.Reader.GetBinding(settings.Function);
                 var keyboard = binding != null ? binding.Keyboard : null;
 
                 if (string.IsNullOrWhiteSpace(keyboard)) return;
@@ -282,15 +284,9 @@ namespace starcitizen.Buttons
 
         private void UpdatePropertyInspector()
         {
-            if (Program.dpReader == null) return;
+            if (bindingService.Reader == null) return;
 
-            Connection.SendToPropertyInspectorAsync(new JObject
-            {
-                ["functionsLoaded"] = true,
-                ["functions"] = FunctionListBuilder.BuildFunctionsData()
-            });
+            PropertyInspectorMessenger.SendFunctionsAsync(Connection);
         }
-
-        private JArray BuildFunctionsData() => FunctionListBuilder.BuildFunctionsData();
     }
 }
