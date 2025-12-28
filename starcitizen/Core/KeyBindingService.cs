@@ -56,7 +56,7 @@ namespace starcitizen.Core
             loadQueue.QueueUserWorkItem(_ => LoadBindings(), null);
         }
 
-        public bool TryGetBinding(string functionName, out SCActionMapEntry action)
+        public bool TryGetBinding(string functionName, out DProfileReader.Action action)
         {
             action = null;
 
