@@ -81,9 +81,12 @@ namespace starcitizen
         public static string profile;
 
         private static bool enableCsvExport;
+        private static int keyBindingsVersion;
 
         // Event to notify buttons when key bindings are loaded
         public static event EventHandler KeyBindingsLoaded;
+
+        public static int KeyBindingsVersion => keyBindingsVersion;
 
         public static void HandleKeyBindingEvents(object sender, object evt)
         {
@@ -136,6 +139,7 @@ namespace starcitizen
                 }
 
                 // Notify all buttons that key bindings are loaded
+                Interlocked.Increment(ref keyBindingsVersion);
                 KeyBindingsLoaded?.Invoke(null, EventArgs.Empty);
                 Logger.Instance.LogMessage(TracingLevel.INFO, "Key bindings loaded - notifying buttons");
             }
