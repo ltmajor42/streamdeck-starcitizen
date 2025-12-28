@@ -180,6 +180,7 @@
     <Compile Include="Audio\CachedSoundSampleProvider.cs" />
     <Compile Include="Buttons\ActionDelay.cs" />
     <Compile Include="Buttons\CosmeticKey.cs" />
+    <Compile Include="Buttons\FunctionListBuilder.cs" />
     <Compile Include="Buttons\DualAction.cs" />
     <Compile Include="Buttons\StateMemory.cs" />
     <Compile Include="Buttons\StarCitizenDialBase.cs" />
