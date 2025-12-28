@@ -155,12 +155,12 @@
       "PropertyInspectorPath": "PropertyInspector/StarCitizen/StateMemory.html"
     }
   ],
-  "Author": "mhwlng",
+  "Author": "ltmajor42",
   "Description": "Star Citizen Buttons",
   "Name": "Star Citizen",
   "Icon": "Images/pluginIcon",
   "URL": "https://github.com/mhwlng/streamdeck-starcitizen",
-  "Version": "1.2.0",
+  "Version": "2.0",
   "CodePath": "com.mhwlng.starcitizen",
   "Category": "Star Citizen",
   "CategoryIcon": "Images/categoryIcon",
