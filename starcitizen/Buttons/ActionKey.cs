@@ -46,7 +46,7 @@ namespace starcitizen.Buttons
         PluginSettings settings;
         private CachedSound _clickSound = null;
 
-        private static readonly object FunctionsCacheLock = new object();
+        private static readonly object FunctionsCacheLock = new();
         private static JArray cachedFunctions;
         private static int cachedFunctionsVersion = -1;
 
